@@ -1,0 +1,8 @@
+scrapy
+pdfminer.six
+beautifulsoup4
+langchain
+langchain_google_genai
+google-generativeai
+openai
+PyYAML

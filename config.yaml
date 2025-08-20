@@ -1,0 +1,30 @@
+sources:
+  - name: arxiv
+    start_urls:
+      - https://arxiv.org/list/physics/new
+    max_items: 5  # Limit to 5 articles
+  # - name: pubmed
+  #   start_urls:
+  #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
+
+extraction:
+  schema:
+    - title
+    - authors
+    - abstract
+    - key_results
+    - methods
+
+llm:
+  # model: "openai/gpt-4"
+  # model: "gemini-2.5-flash"   # or "gemini-2.5-pro"
+  # provider: ollama
+  # model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
+  provider: openrouter
+  model: "deepseek/deepseek-r1-0528:free"
+  temperature: 0.2
+  chunk_size: 1000
+
+output:
+  format: json
+  path: data/output.json

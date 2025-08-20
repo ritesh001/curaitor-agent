@@ -1,0 +1,133 @@
+[
+  {
+    "source_index": 0,
+    "metadata": {
+      "title": "Topological Regularization of 1 Loop and 2 Loop Gravitational Corrections in the Higgs Fermion Sector",
+      "authors": [
+        "Sebasti\u00e1n Al\u00ed Sacasa-C\u00e9spedes"
+      ]
+    },
+    "extraction": [
+      {
+        "raw": "```json\n{\n  \"title\": \"Topological Regularization of 1 Loop and 2 Loop Gravitational Corrections in the Higgs Fermion Sector\",\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": null,\n  \"methods\": null\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"This work presents topological regularization (TR), a geometric framework for controlling ultraviolet divergences in gravitational loop corrections to the Higgs fermion sector. The method embeds flat spacetime into a compact four dimensional manifold, introducing a curvature induced high energy cutoff that preserves both Lorentz invariance and causality. The regulator is determined by the manifold's Euler characteristic, ensuring power law suppression of short distance modes without breaking spacetime symmetries. Applied to one and two loop processes, TR yields finite corrections to fermion self energies, Yukawa couplings, and curvature dependent operators, with leading contributions set entirely by topological properties. Beyond its role as a regulator, TR naturally encodes a duality between ultraviolet and infrared scales and admits a thermal interpretation linked to the Unruh effect. While the framework is universal in principle, its current implementation relies on a spherical\",\n  \"key_results\": [\n    \"Finite corrections to fermion self energies, Yukawa couplings, and curvature dependent operators at one and two loops\",\n    \"Leading contributions determined entirely by topological properties\",\n    \"Duality between ultraviolet and infrared scales\",\n    \"Thermal interpretation linked to the Unruh effect\"\n  ],\n  \"methods\": [\n    \"Embeds flat spacetime into a compact four-dimensional manifold\",\n    \"Uses curvature-induced high energy cutoff preserving Lorentz invariance and causality\",\n    \"Regulator determined by the manifold's Euler characteristic\",\n    \"Ensures power law suppression of short-distance modes without breaking spacetime symmetries\"\n  ]\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": \"Admits a thermal interpretation linked to the Unruh effect; predicted signals are highly suppressed but offer a symmetry-preserving path toward probing Planck-scale physics within effective field theory.\",\n  \"methods\": \"Relies on a spherical embedding; tested exclusively in the soft graviton limit.\"\n}\n```"
+      }
+    ]
+  },
+  {
+    "source_index": 1,
+    "metadata": {
+      "title": "Quantum biosensing on a multiplexed functionalized diamond microarray",
+      "authors": [
+        "Ignacio Chi-Dur\u00e1n",
+        "Evan J. Villafranca",
+        "David Dang",
+        "Rachelle Rosiles",
+        "Chun Tung Cheung",
+        "Zhiran Zhang",
+        "Jason P. Cleveland",
+        "Peter C. Maurer"
+      ]
+    },
+    "extraction": [
+      {
+        "raw": "```json\n{\n  \"title\": \"Quantum biosensing on a multiplexed functionalized diamond microarray\",\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": null,\n  \"methods\": null\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"Quantum sensing with nitrogen-vacancy (NV) centers in diamond promises to revolutionize biological research and medical diagnostics. Thanks to their high sensitivity, NV sensors could, in principle, detect specific binding events with metabolites and proteins in a massively parallel and label-free way, avoiding the complexity of mass spectrometry. Realizing this vision has been hindered by the lack of quantum sensor arrays that unite high-density spatial multiplexing with uncompromising biochemical specificity. Here, we introduce a scalable quantum biosensing platform that overcomes these barriers by integrating the first multiplexed DNA microarray directly onto a subnanometer antifouling diamond surface. The 7x7 DNA array, patterned onto a diamond chip, enables simultaneous detection of 49 distinct biomolecular features with high spatial resolution and reproducibility, as verified by fluorescence microscopy. Molecular recognition is converted into a quantum signal via a\",\n  \"key_results\": \"The 7x7 DNA array enables simultaneous detection of 49 distinct biomolecular features with high spatial resolution and reproducibility.\",\n  \"methods\": \"Integration of multiplexed DNA microarray onto a subnanometer antifouling diamond surface; fluorescence microscopy verification\"\n}\n```\n\n**Explanation:**  \n- **title:** Not present in the text chunk \u2192 `null`  \n- **authors:** Not mentioned \u2192 `null`  \n- **abstract:** Entire provided text (incomplete but captured as-is)  \n- **key_results:** Extracted core achievement: *\"simultaneous detection of 49 distinct biomolecular features with high spatial resolution and reproducibility\"*  \n- **methods:** Combined two key techniques:  \n  1. *\"integrating the first multiplexed DNA microarray directly onto a subnanometer antifouling diamond surface\"*  \n  2. Verification via *\"fluorescence microscopy\"* (explicitly stated for reproducibility validation).  \n\nAll fields strictly use verbatim phrasing from the text where possible."
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"detection of 49 distinct biomolecular features with high spatial resolution and reproducibility, as verified by fluorescence microscopy. Molecular recognition is converted into a quantum signal via a target-induced displacement mechanism in which hybridization removes a Gd$^{3+}$-tagged DNA strand, restoring NV center spin relaxation times (T$_1$) and producing a binary quantum readout. This platform establishes a new paradigm for high-throughput, multiplexed quantum biosensing and opens the door to advanced molecular diagnostics and large-scale quantum sensor networks operable in complex biological environments.\",\n  \"key_results\": \"detection of 49 distinct biomolecular features with high spatial resolution and reproducibility; establishes a new paradigm for high-throughput, multiplexed quantum biosensing; enables advanced molecular diagnostics and large-scale quantum sensor networks in complex biological environments.\",\n  \"methods\": \"target-induced displacement mechanism converting molecular recognition into a quantum signal via hybridization-mediated removal of a Gd$^{3+}$-tagged DNA strand, restoring NV center spin relaxation times (T$_1$) to generate a binary quantum readout. Verification via fluorescence microscopy.\"\n}\n```"
+      }
+    ]
+  },
+  {
+    "source_index": 2,
+    "metadata": {
+      "title": "Fine-Tuning Hydrophilic-Hydrophobic Balance in Stimuli-Responsive PEGPNIPAM Micelles for Controlled Drug Delivery",
+      "authors": [
+        "Ghazal Jamirad",
+        "Mahdi Seif",
+        "Abbas Montazeri"
+      ]
+    },
+    "extraction": [
+      {
+        "raw": "```json\n{\n  \"title\": \"Fine-Tuning Hydrophilic-Hydrophobic Balance in Stimuli-Responsive PEGPNIPAM Micelles for Controlled Drug Delivery\",\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": null,\n  \"methods\": null\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": [],\n  \"abstract\": \"Temperature-responsive polymeric micelles have great potential in drug delivery, enhancing therapeutic efficacy while minimizing systemic toxicity. This study investigates the self-assembly of poly(ethylene glycol)-poly(N-isopropylacrylamide) (PEG-PNIPAM) block copolymers as nanocarriers for Doxorubicin (DOX) using coarse-grained molecular dynamics (CG-MD) simulations. We systematically examined the effects of polymer chain length and hydrophilic/hydrophobic balance on micelle formation, stability, and drug encapsulation efficiency. PEG-PNIPAM copolymers self-assembled above the lower critical solution temperature (LCST), forming stable micelles with varying morphologies. Our findings revealed that PEG enhances micelle hydration and stability, while PNIPAM improves drug retention but may hinder controlled release. Increasing PNIPAM or PEG length significantly increased micelle size, with DOX preferentially localizing in the PEG-rich outer shell, enhancing solubility and preventing\",\n  \"key_results\": [\n    \"PEG-PNIPAM copolymers self-assembled above LCST forming stable micelles with varying morphologies\",\n    \"PEG enhances micelle hydration and stability\",\n    \"PNIPAM improves drug retention but may hinder controlled release\",\n    \"Increasing PNIPAM or PEG length significantly increased micelle size\",\n    \"DOX preferentially localizes in the PEG-rich outer shell, enhancing solubility and preventing\"\n  ],\n  \"methods\": [\n    \"Coarse-grained molecular dynamics (CG-MD) simulations\",\n    \"Systematic examination of polymer chain length effects\",\n    \"Systematic examination of hydrophilic/hydrophobic balance effects\"\n  ]\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"hinder controlled release. Increasing PNIPAM or PEG length significantly increased micelle size, with DOX preferentially localizing in the PEG-rich outer shell, enhancing solubility and preventing aggregation. The DOX diffusion coefficient ranged from $10^{-8}$ to $10^{-9}$ cm$^{2}$s$^{-1}$, reflecting drug release dynamics. Structural and thermodynamic analyses confirmed spontaneous DOX encapsulation, with PEG-PNIPAM micelles providing a favorable environment for drug loading. Mean square displacement (MSD), radial distribution function (RDF), and solvent-accessible surface area (SASA) analyses highlighted the role of PEG in controlled drug release and PNIPAM in drug binding. These molecular-level insights underscore the potential of fine-tuning PEG-PNIPAM compositions for enhanced drug delivery, paving the way for precision cancer therapies.\",\n  \"key_results\": [\n    \"Increasing PNIPAM or PEG length significantly increased micelle size\",\n    \"DOX preferentially localizes in the PEG-rich outer shell, enhancing solubility and preventing aggregation\",\n    \"DOX diffusion coefficient ranged from $10^{-8}$ to $10^{-9}$ cm$^{2}$s$^{-1}$\",\n    \"Spontaneous DOX encapsulation confirmed via structural/thermodynamic analyses\",\n    \"PEG-PNIPAM micelles provide a favorable environment for drug loading\",\n    \"PEG enables controlled drug release while PNIPAM facilitates drug binding\"\n  ],\n  \"methods\": [\n    \"Mean square displacement (MSD) analysis\",\n    \"Radial distribution function (RDF) analysis\",\n    \"Solvent-accessible surface area (SASA) analysis\",\n    \"Structural and thermodynamic analyses\"\n  ]\n}\n```"
+      }
+    ]
+  },
+  {
+    "source_index": 3,
+    "metadata": {
+      "title": "High-Resolution Directional Depth Electrodes: Open-Source FEM Lead-Field Modeling, Characterization, and Validation",
+      "authors": [
+        "Takfarinas Medani",
+        "Jace Willis",
+        "Chris Wright",
+        "Yash Vakilna",
+        "Ryan Shores",
+        "Raymundo Cassani",
+        "Anand Joshi",
+        "Richard Leahy",
+        "John Seymour",
+        "John Mosher"
+      ]
+    },
+    "extraction": [
+      {
+        "raw": "```json\n{\n  \"title\": \"High-Resolution Directional Depth Electrodes: Open-Source FEM Lead-Field Modeling, Characterization, and Validation\",\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": null,\n  \"methods\": null\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": [],\n  \"abstract\": \"Depth electrodes used in stereoelectroencephalography (sEEG) and deep-brain stimulation (DBS) are essential tools for neural recording and stimulation. Traditional designs have limited spatial resolution, typically 8 to 16 cylindrical contacts (0.8 to 1.0 mm diameter) along a 5 to 10 cm shaft, restricting recordings from small or localized populations. Recent high-density, directional electrodes (HDsEEG) enable finer localization of local field potentials (LFPs) and spike timing. Yet, characterizing their directional sensitivity and validating modeling tools for lead field (LF) analysis remain critical. We compare finite element method (FEM) LF modeling of a novel HD-sEEG electrode using two tools: a commercial solver (ANSYS) and an open-source pipeline (Brainstorm-DUNEuro). Goals: (i) validate against analytical solutions, (ii) assess solver differences, and (iii) characterize HDsEEG directional sensitivity. LFs were modeled in simple and bio-relevant scenarios. Using Helmholtz\",\n  \"key_results\": null,\n  \"methods\": \"Finite element method (FEM) LF modeling of a novel HD-sEEG electrode using two tools: a commercial solver (ANSYS) and an open-source pipeline (Brainstorm-DUNEuro). Modeling performed in simple and bio-relevant scenarios.\"\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"validate against analytical solutions, (ii) assess solver differences, and (iii) characterize HDsEEG directional sensitivity. LFs were modeled in simple and bio-relevant scenarios. Using Helmholtz reciprocity, we computed LFs by (a) electrode-based stimulation with ANSYS and (b) source-based recording with Brainstorm-DUNEuro. First, a multi-sphere head model with known solutions tested the solver's accuracy. Next, an HDsEEG electrode in a homogeneous conductor was simulated. Directional effects were assessed by comparing sensitivity with vs. without the insulating substrate. Source localization performance was also compared between HDsEEG and standard electrodes. Both solvers closely matched analytic solutions. In realistic settings, LF distributions were highly similar. Modeling showed clear directional sensitivity: contacts facing a source had higher sensitivity than those shadowed, reflecting a substrate shielding effect that vanished when the substrate was conductive. Crucially,\",\n  \"key_results\": \"Both solvers closely matched analytic solutions. In realistic settings, LF distributions were highly similar. Modeling showed clear directional sensitivity: contacts facing a source had higher sensitivity than those shadowed, reflecting a substrate shielding effect that vanished when the substrate was conductive.\",\n  \"methods\": \"LFs were modeled in simple and bio-relevant scenarios. Using Helmholtz reciprocity, we computed LFs by (a) electrode-based stimulation with ANSYS and (b) source-based recording with Brainstorm-DUNEuro. First, a multi-sphere head model with known solutions tested the solver's accuracy. Next, an HDsEEG electrode in a homogeneous conductor was simulated. Directional effects were assessed by comparing sensitivity with vs. without the insulating substrate. Source localization performance was also compared between HDsEEG and standard electrodes.\"\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": [\n    \"Contacts facing a source had higher sensitivity than those shadowed due to substrate shielding, which vanished with conductive substrates.\",\n    \"HDsEEG improved source localization by leveraging voltage differences across contacts for robust directional low-frequency information.\"\n  ],\n  \"methods\": null\n}\n```"
+      }
+    ]
+  },
+  {
+    "source_index": 4,
+    "metadata": {
+      "title": "Visible-Light Photocatalytic Degradation of Cresols using Sustainable 3D-Printed Bi4O5I2-Hematite Scaffold",
+      "authors": [
+        "Akash Rawat",
+        "Raphael B. de Oliveira",
+        "Tapas Pal",
+        "Kleuton Antunes",
+        "Guilherme S. L. Fabris",
+        "Raphael M. Tromer",
+        "Marcelo L. Pereira Junior",
+        "Adarsh Singh",
+        "Ashok Kumar Gupta",
+        "Douglas S. Galvao",
+        "Chandra Sekhar Tiwary"
+      ]
+    },
+    "extraction": [
+      {
+        "raw": "```json\n{\n  \"title\": \"Visible-Light Photocatalytic Degradation of Cresols using Sustainable 3D-Printed Bi4O5I2-Hematite Scaffold\",\n  \"authors\": null,\n  \"abstract\": null,\n  \"key_results\": null,\n  \"methods\": null\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"In photocatalysis, the reusability limit of catalysts can contribute to secondary pollution, posing ecological risks. Addressing this, the present study explores the integration of additive manufacturing with photocatalysis by decorating Bi$_4$O$_5$I$_2$ onto a 3D-printed hematite scaffold (Bi$_4$O$_5$I$_2$@3DH) for the degradation of cresols. The 3D-printed hematite grid, fabricated via direct ink writing, exhibited excellent rheological behavior ($\\\\tau\\\\gamma = 24$ Pa), allowing precise shape retention. The sintered Bi$_4$O$_5$I$_2$ was subsequently immobilized via a facile dip-coating method. Under optimized conditions, the composite achieved 99.78\\\\% degradation of 20 mg/L p-cresol within 240 min of irradiation. Notably, hematite served as a porous substrate and contributed to photocatalytic activity. Density functional theory simulations with Hubbard correction (DFT+U) indicated an interfacial charge transfer of approximately -0.9 electrons from hematite to Bi$_4$O$_5$I$_2$,\",\n  \"key_results\": [\n    \"Achieved 99.78% degradation of 20 mg/L p-cresol within 240 min of irradiation\",\n    \"Hematite substrate contributed to photocatalytic activity while enabling reusability\",\n    \"Interfacial charge transfer of ~-0.9 electrons from hematite to Bi$_4$O$_5$I$_2$ confirmed via DFT+U\"\n  ],\n  \"methods\": [\n    \"Direct ink writing for 3D-printed hematite scaffold fabrication\",\n    \"Facile dip-coating immobilization of sintered Bi$_4$O$_5$I$_2$\",\n    \"Density functional theory simulations with Hubbard correction (DFT+U)\"\n  ]\n}\n```"
+      },
+      {
+        "raw": "```json\n{\n  \"title\": null,\n  \"authors\": null,\n  \"abstract\": \"activity. Density functional theory simulations with Hubbard correction (DFT+U) indicated an interfacial charge transfer of approximately -0.9 electrons from hematite to Bi$_4$O$_5$I$_2$, confirming a S-scheme heterojunction between hematite and Bi$_4$O$_5$I$_2$ semiconductors, validating experimental observations. The composite demonstrated strong performance across varied water matrices and in the presence of other cresol isomers. It also retained 84.28\\\\% degradation efficiency after 10 cycles, with negligible catalyst leaching. Furthermore, in vitro and in silico ecotoxicity analyses revealed reduced toxicity of the degradation products. The current work presents a novel and scalable strategy, advancing the use of earth-abundant hematite minerals in sustainable environmental remediation.\",\n  \"key_results\": [\n    \"Interfacial charge transfer of ~-0.9 electrons from hematite to Bi$_4$O$_5$I$_2$ confirmed an S-scheme heterojunction\",\n    \"Strong performance across varied water matrices and in the presence of other cresol isomers\",\n    \"84.28% degradation efficiency retention after 10 cycles with negligible catalyst leaching\",\n    \"Reduced toxicity of degradation products confirmed via in vitro and in silico ecotoxicity analyses\"\n  ],\n  \"methods\": \"Density functional theory simulations with Hubbard correction (DFT+U)\"\n}\n```"
+      }
+    ]
+  }
+]
