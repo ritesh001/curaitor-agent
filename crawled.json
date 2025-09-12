@@ -1,65 +1,46 @@
 [
 {
-  "title": "Topological Regularization of 1 Loop and 2 Loop Gravitational Corrections in the Higgs Fermion Sector",
+  "title": "Alleviating the Hubble Tension via Cosmological Time Dilation in the meVSL Model",
   "authors": [
-    "Sebastián Alí Sacasa-Céspedes"
+    "Seokcheon Lee"
   ],
-  "abstract": "This work presents topological regularization (TR), a geometric framework for controlling ultraviolet divergences in gravitational loop corrections to the Higgs fermion sector. The method embeds flat spacetime into a compact four dimensional manifold, introducing a curvature induced high energy cutoff that preserves both Lorentz invariance and causality. The regulator is determined by the manifold's Euler characteristic, ensuring power law suppression of short distance modes without breaking spacetime symmetries. Applied to one and two loop processes, TR yields finite corrections to fermion self energies, Yukawa couplings, and curvature dependent operators, with leading contributions set entirely by topological properties. Beyond its role as a regulator, TR naturally encodes a duality between ultraviolet and infrared scales and admits a thermal interpretation linked to the Unruh effect. While the framework is universal in principle, its current implementation relies on a spherical embedding and has been tested only in the soft graviton limit. The predicted signals are highly suppressed, posing experimental challenges, yet TR offers a symmetry preserving path toward probing Planck-scale physics within effective field theory."
+  "abstract": "We show that a minimally extended varying-speed-of-light (meVSL) cosmology can alleviate the Hubble tension through a single parameter, b. This parameter both shortens the sound horizon at the drag epoch and modifies cosmological time dilation for transients, Delta_t_obs=(1+z)^n Delta_t_emit with n=1-b/4. The reduction in r_d raises the early-universe-inferred H_0 from CMB/BAO analyses, while departures of n from unity provide an independent, time-domain probe of b. Using Fisher forecasts for a DES-like survey, we estimate the supernova sample size required to detect sub-percent deviations in n under realistic statistical and systematic uncertainties. For illustration, b=0.03 yields z_drag = 1108 and r_d = 135 Mpc, consistent with H_0=~73 km/s/Mpc. We conclude that current and upcoming time-domain surveys can place competitive constraints on b and, jointly with CMB/BAO, provide a self-consistent observational test of meVSL's ability to alleviate the H_0 discrepancy."
 },
 {
-  "title": "Quantum biosensing on a multiplexed functionalized diamond microarray",
+  "title": "Theoretical and experimental basis for excluding Einstein-Cartan theory within the USMEG-EFT framework",
   "authors": [
-    "Ignacio Chi-Durán",
-    "Evan J. Villafranca",
-    "David Dang",
-    "Rachelle Rosiles",
-    "Chun Tung Cheung",
-    "Zhiran Zhang",
-    "Jason P. Cleveland",
-    "Peter C. Maurer"
+    "Farrukh A. Chishtie"
   ],
-  "abstract": "Quantum sensing with nitrogen-vacancy (NV) centers in diamond promises to revolutionize biological research and medical diagnostics. Thanks to their high sensitivity, NV sensors could, in principle, detect specific binding events with metabolites and proteins in a massively parallel and label-free way, avoiding the complexity of mass spectrometry. Realizing this vision has been hindered by the lack of quantum sensor arrays that unite high-density spatial multiplexing with uncompromising biochemical specificity. Here, we introduce a scalable quantum biosensing platform that overcomes these barriers by integrating the first multiplexed DNA microarray directly onto a subnanometer antifouling diamond surface. The 7x7 DNA array, patterned onto a diamond chip, enables simultaneous detection of 49 distinct biomolecular features with high spatial resolution and reproducibility, as verified by fluorescence microscopy. Molecular recognition is converted into a quantum signal via a target-induced displacement mechanism in which hybridization removes a Gd$^{3+}$-tagged DNA strand, restoring NV center spin relaxation times (T$_1$) and producing a binary quantum readout. This platform establishes a new paradigm for high-throughput, multiplexed quantum biosensing and opens the door to advanced molecular diagnostics and large-scale quantum sensor networks operable in complex biological environments."
+  "abstract": "The USMEG-EFT framework~\\cite{ChishtieEFT2025,ChishtieBreakdown2023} provides systematic quantum gravity through with 4D General Relativity (GR) achieving Standard Model-gravity unification. This work examines Einstein-Cartan theory against McKeon et al.'s claims~\\cite{BrandtFrenkelMcKeon2024,McKeonBrandtFrenkel2025} regarding its viability for unification. McKeon et al.'s 2024 analysis omitted key interaction terms, missing Einstein-Cartan's central content. Their 2025 claim that unification requires Einstein-Cartan is incorrect. When fermions are included, Einstein-Cartan generates non-renormalizable four-fermion interactions producing catastrophic quartic divergences $\\sim \\kappa^4\\Lambda^4$. Precision experiments exclude the theory: MICROSCOPE constrains equivalence principle violations at $10^{-15}$ while Einstein-Cartan predicts $10^{-12}$ effects. In contrast to these claims, the USMEG-EFT framework achieves unification using standard 4D GR through constraints, producing finite results with calculable coefficients while remaining experimentally compatible."
 },
 {
-  "title": "Fine-Tuning Hydrophilic-Hydrophobic Balance in Stimuli-Responsive PEGPNIPAM Micelles for Controlled Drug Delivery",
+  "title": "The reflection-transmission problem for inertial waves on geostrophic shear layers",
   "authors": [
-    "Ghazal Jamirad",
-    "Mahdi Seif",
-    "Abbas Montazeri"
+    "Lennart Kira",
+    "Jerome Noir",
+    "Daniel Lecoanet"
   ],
-  "abstract": "Temperature-responsive polymeric micelles have great potential in drug delivery, enhancing therapeutic efficacy while minimizing systemic toxicity. This study investigates the self-assembly of poly(ethylene glycol)-poly(N-isopropylacrylamide) (PEG-PNIPAM) block copolymers as nanocarriers for Doxorubicin (DOX) using coarse-grained molecular dynamics (CG-MD) simulations. We systematically examined the effects of polymer chain length and hydrophilic/hydrophobic balance on micelle formation, stability, and drug encapsulation efficiency. PEG-PNIPAM copolymers self-assembled above the lower critical solution temperature (LCST), forming stable micelles with varying morphologies. Our findings revealed that PEG enhances micelle hydration and stability, while PNIPAM improves drug retention but may hinder controlled release. Increasing PNIPAM or PEG length significantly increased micelle size, with DOX preferentially localizing in the PEG-rich outer shell, enhancing solubility and preventing aggregation. The DOX diffusion coefficient ranged from $10^{-8}$ to $10^{-9}$ cm$^{2}$s$^{-1}$, reflecting drug release dynamics. Structural and thermodynamic analyses confirmed spontaneous DOX encapsulation, with PEG-PNIPAM micelles providing a favorable environment for drug loading. Mean square displacement (MSD), radial distribution function (RDF), and solvent-accessible surface area (SASA) analyses highlighted the role of PEG in controlled drug release and PNIPAM in drug binding. These molecular-level insights underscore the potential of fine-tuning PEG-PNIPAM compositions for enhanced drug delivery, paving the way for precision cancer therapies."
+  "abstract": "Inertial waves in fluid regions of planets and stars play an important role in their dynamics and evolution, through energy, heat and angular momentum transport and mixing of chemicals. While inertial wave propagation in flows prescribed by solid-body rotation is well-understood, natural environments are often characterized by convection or zonal flows. In these more realistic configurations, we do not yet understand the propagation of inertial waves or their transport properties. In this work, we focus on the interaction between inertial waves and geostrophic currents, which has thus far only been investigated using ray theory, where the wave length is assumed to be small relative to the length scale of the current, or averaging/statistical approaches. We develop a quasi-two-dimensional analytical model to investigate the reflection and transmission of inertial waves in the presence of a localized geostrophic shear layer of arbitrary width and compare our theoretical findings to a set of numerical simulations. We demonstrate that, in contrast to ray theory predictions, partial reflections occur even in subcritical shear layers and tunnelling with almost total transmission is possible in supercritical shear layers, if the layer is thin compared to the wavelength. That is, supercritical shear layers act as low-pass filters for inertial wave beams allowing the low-wavenumber waves to travel through. Thus, our analytical model allows us to predict interactions between inertial waves and geostrophic shear layers not addressed by ray-based or statistical theories and conceptually understand the behaviour of the full wavefield around and inside such layers."
 },
 {
-  "title": "High-Resolution Directional Depth Electrodes: Open-Source FEM Lead-Field Modeling, Characterization, and Validation",
+  "title": "Uplink Pre-Compensation for Ground-to-Space Optical Communications Using Downlink Tomographic Reconstruction",
   "authors": [
-    "Takfarinas Medani",
-    "Jace Willis",
-    "Chris Wright",
-    "Yash Vakilna",
-    "Ryan Shores",
-    "Raymundo Cassani",
-    "Anand Joshi",
-    "Richard Leahy",
-    "John Seymour",
-    "John Mosher"
+    "Alex Frost",
+    "Nicolas Maron",
+    "Shane Walsh",
+    "Benjamin Dix-Matthews",
+    "Sascha Schediwy",
+    "Michael Hart"
   ],
-  "abstract": "Depth electrodes used in stereoelectroencephalography (sEEG) and deep-brain stimulation (DBS) are essential tools for neural recording and stimulation. Traditional designs have limited spatial resolution, typically 8 to 16 cylindrical contacts (0.8 to 1.0 mm diameter) along a 5 to 10 cm shaft, restricting recordings from small or localized populations. Recent high-density, directional electrodes (HDsEEG) enable finer localization of local field potentials (LFPs) and spike timing. Yet, characterizing their directional sensitivity and validating modeling tools for lead field (LF) analysis remain critical. We compare finite element method (FEM) LF modeling of a novel HD-sEEG electrode using two tools: a commercial solver (ANSYS) and an open-source pipeline (Brainstorm-DUNEuro). Goals: (i) validate against analytical solutions, (ii) assess solver differences, and (iii) characterize HDsEEG directional sensitivity. LFs were modeled in simple and bio-relevant scenarios. Using Helmholtz reciprocity, we computed LFs by (a) electrode-based stimulation with ANSYS and (b) source-based recording with Brainstorm-DUNEuro. First, a multi-sphere head model with known solutions tested the solver's accuracy. Next, an HDsEEG electrode in a homogeneous conductor was simulated. Directional effects were assessed by comparing sensitivity with vs. without the insulating substrate. Source localization performance was also compared between HDsEEG and standard electrodes. Both solvers closely matched analytic solutions. In realistic settings, LF distributions were highly similar. Modeling showed clear directional sensitivity: contacts facing a source had higher sensitivity than those shadowed, reflecting a substrate shielding effect that vanished when the substrate was conductive. Crucially, HDsEEG improved source localization, as voltage differences across contacts provided robust directional LF information."
+  "abstract": "Uplink pre-compensation in ground-to-satellite optical links remains a problem, with an appropriate measurement of the wavefront error in the uplink path often not being available. We present a method that uses successive measurements of the readily accessible downlink beam to perform a tomographic reconstruction of the volume of atmosphere common to the downlink beam and the ground-station field-of-view. These measurements are done through the existing downlink wavefront sensor. From here, an estimate of the wavefront error along the uplink path can be obtained. We evaluate this method in simulation over representative atmospheric conditions and find good performance, especially for situations where the satellite point-ahead angle is many times greater than the atmosphere's isoplanatic angle. Compared to pre-compensation directly using the downlink phase, we find that this method estimates the uplink path with a residual mean-square wavefront error that is up to 8.6 times less. The hardware simplicity of this method makes it a promising solution for uplink pre-compensation implementations targeted at optical communications."
 },
 {
-  "title": "Visible-Light Photocatalytic Degradation of Cresols using Sustainable 3D-Printed Bi4O5I2-Hematite Scaffold",
+  "title": "ORLCA: A concept for an open-source Life Cycle Assessment repository built for research",
   "authors": [
-    "Akash Rawat",
-    "Raphael B. de Oliveira",
-    "Tapas Pal",
-    "Kleuton Antunes",
-    "Guilherme S. L. Fabris",
-    "Raphael M. Tromer",
-    "Marcelo L. Pereira Junior",
-    "Adarsh Singh",
-    "Ashok Kumar Gupta",
-    "Douglas S. Galvao",
-    "Chandra Sekhar Tiwary"
+    "Hannah Wakeling",
+    "Kristin Lohwasser",
+    "Peter Millington"
   ],
-  "abstract": "In photocatalysis, the reusability limit of catalysts can contribute to secondary pollution, posing ecological risks. Addressing this, the present study explores the integration of additive manufacturing with photocatalysis by decorating Bi$_4$O$_5$I$_2$ onto a 3D-printed hematite scaffold (Bi$_4$O$_5$I$_2$@3DH) for the degradation of cresols. The 3D-printed hematite grid, fabricated via direct ink writing, exhibited excellent rheological behavior ($\\tau\\gamma = 24$ Pa), allowing precise shape retention. The sintered Bi$_4$O$_5$I$_2$ was subsequently immobilized via a facile dip-coating method. Under optimized conditions, the composite achieved 99.78\\% degradation of 20 mg/L p-cresol within 240 min of irradiation. Notably, hematite served as a porous substrate and contributed to photocatalytic activity. Density functional theory simulations with Hubbard correction (DFT+U) indicated an interfacial charge transfer of approximately -0.9 electrons from hematite to Bi$_4$O$_5$I$_2$, confirming a S-scheme heterojunction between hematite and Bi$_4$O$_5$I$_2$ semiconductors, validating experimental observations. The composite demonstrated strong performance across varied water matrices and in the presence of other cresol isomers. It also retained 84.28\\% degradation efficiency after 10 cycles, with negligible catalyst leaching. Furthermore, in vitro and in silico ecotoxicity analyses revealed reduced toxicity of the degradation products. The current work presents a novel and scalable strategy, advancing the use of earth-abundant hematite minerals in sustainable environmental remediation."
+  "abstract": "Comprehensive Life Cycle Assessment (LCA) as a tool to account for the full range of environmental impacts of resource use in commodities or services is a first step in reducing these impacts. There is an increasing necessity to account for these aspects in the planning, running and end-of-life of scientific experiments and research infrastructure. In the following, the concept for an Open Research Life Cycle Assessment (ORLCA) repository is presented to support this endeavour. It is designed to comply fully with the principles of findability, accessibility, interoperability, and reusability (FAIR)."
 }
 ]

@@ -2,7 +2,8 @@ from .llm_agent import ExtractionAgent
 import yaml
 import json
 import os
-from extractor.pdf_parser import parse_pdf
+# from extractor.pdf_parser import parse_pdf
+from rag.content_parsing import extract_pdf_components
 
 # class AgentPipeline:
 #     def __init__(self, config_path='config.yaml'):
@@ -45,7 +46,8 @@ class AgentPipeline:
         for idx, item in enumerate(items):
             try:
                 if 'file_path' in item and os.path.exists(item['file_path']):
-                    text = parse_pdf(item['file_path'])
+                    # text = parse_pdf(item['file_path'])
+                    text = extract_pdf_components(item['file_path'])['texts']
                 else:
                     # Fallback: compose text from fields we have
                     text = "\n".join(

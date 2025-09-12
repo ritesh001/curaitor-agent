@@ -17,11 +17,11 @@ extraction:
 
 llm:
   # model: "openai/gpt-4"
-  # model: "gemini-2.5-flash"   # or "gemini-2.5-pro"
+  model: "gemini-2.5-flash"   # or "gemini-2.5-pro"
   # provider: ollama
   # model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
-  provider: openrouter
-  model: "deepseek/deepseek-r1-0528:free"
+  # provider: openrouter
+  # model: "deepseek/deepseek-r1-0528:free"
   temperature: 0.2
   chunk_size: 1000
 
