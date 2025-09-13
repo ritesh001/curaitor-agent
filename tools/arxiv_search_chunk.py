@@ -1,6 +1,19 @@
 from datetime import datetime, time, timedelta
 from dateutil import tz
 import arxiv
+import tiktoken
+import re, requests
+from io import BytesIO
+from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import faiss
+from sentence_transformers import CrossEncoder
+from collections import defaultdict
+from datetime import datetime
+from dateutil import tz
+import numpy as np
+import tiktoken
 
 ## TODO: combine into one query => use LLM to find keywords: Yuxing
 #arXiv 的查询语法（字段如 all:, ti:, au:, abs:, cat:，支持 AND/OR/括号与引号等）。
@@ -73,9 +86,6 @@ for i, r in enumerate(results, 1):
 
 # PDF 抽取与清洗（pypdf）
 # --- Step 1: PDF download + text extract + clean ---
-import re, requests
-from io import BytesIO
-from pypdf import PdfReader
 
 def _strip_hyphenation(t: str) -> str:
     return re.sub(r"-\s*\n\s*", "", t)
@@ -109,8 +119,6 @@ def extract_pdf_text(pdf_url: str) -> str:
         print(f"[WARN] PDF extract failed: {e}")
         return ""
     
-    
-
 #② 规整文档（title+abstract，并尝试拼上全文）
 # --- Step 2: normalize docs from your `results` ---
 docs = []
@@ -137,13 +145,9 @@ for r in results:
 
 print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
 
-
-
-
 #③ 切片（token级，500/100）
 # --- Step 3: chunking (token-based) ---
-## TODO: save chunk
-import tiktoken
+## TODO: save chunk => Ritesh
 enc = tiktoken.get_encoding("cl100k_base")
 
 def chunk_text(text: str, chunk_size=500, overlap=100):
@@ -176,8 +180,7 @@ print(f"[INFO] Total chunks: {len(chunks)}")
 
 #④ 向量化（Sentence-Transformers，bge-small-en）
 # --- Step 4: embeddings ---
-from sentence_transformers import SentenceTransformer
-import numpy as np
+
 
 EMB_MODEL = "BAAI/bge-small-en-v1.5"  # 多语可换 "BAAI/bge-m3" ## TODO: test different embedding models & save embeddings => Ritesh
 emb = SentenceTransformer(EMB_MODEL)
@@ -191,7 +194,7 @@ print("[INFO] Embeddings:", X.shape)
 
 #⑤ 建索引（FAISS 内积；等价于余弦，因为已归一化）
 # --- Step 5: FAISS index ---
-import faiss
+
 dim = X.shape[1]
 index = faiss.IndexFlatIP(dim)
 index.add(X)
@@ -201,7 +204,6 @@ print("[INFO] Index size:", index.ntotal)
 
 #⑥ 检索 + 交叉编码器复排（MiniLM）
 # --- Step 6: Retrieval + Rerank ---
-from sentence_transformers import CrossEncoder
 
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # 轻量高性价比
 
@@ -218,12 +220,6 @@ half_life_days：领域更新快就取小些（如 45–60 天），保守些就
 
 per_doc_chunks：若希望 LLM抓到更多细节，可设为 2，在每篇里再取相邻一个段落。
 '''
-from collections import defaultdict
-from datetime import datetime
-from dateutil import tz
-import numpy as np
-
-
 
 # Step 6) 单次查询的粗排召回（FAISS）+ 交叉编码器重排
 def _retrieve_one(query, faiss_k=80):
@@ -342,7 +338,7 @@ def pretty_print_docs(hits, max_chars=300):
         print(f"    Authors: {authors}")
         print(f"    Date  : {when}")
         print(f"    PDF   : {m.get('pdf_url','')}")
-        print(f"    Snip  : {snip}\n")
+        print(f"    Snip  : {snip}\n") ## TODO: show more context => Ritesh
 
 # === 用法示例 ===
 interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
@@ -355,11 +351,8 @@ hits = retrieve_recent_interest(
 )
 pretty_print_docs(hits)
 
-
-
 #⑦ 组包
 # --- Step 7: pack context ---
-import tiktoken
 
 def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
     enc = tiktoken.get_encoding(model_enc)
