@@ -1,20 +1,4 @@
-sources:
-  - name: arxiv
-    start_urls:
-      - https://arxiv.org/list/physics/new
-    max_items: 5  # Limit to 5 articles
-  # - name: pubmed
-  #   start_urls:
-  #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
-
-extraction:
-  schema:
-    - title
-    - authors
-    - abstract
-    - key_results
-    - methods
-
+# api_key: your_api_key_here
 llm:
   ## OpenAI
   # model: "openai/gpt-4"
@@ -30,9 +14,17 @@ llm:
   provider: openrouter
   # model: "deepseek/deepseek-r1-0528:free"
   model: "moonshotai/kimi-k2:free"
-  temperature: 0.2
+  api_key: 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
+  temperature: 0.7
+  provider: openai
   chunk_size: 1000
-
 output:
-  format: json
   path: data/output.json
+extraction:
+  schema: 
+    - title
+    - authors
+    - abstract
+    - keywords
+    - publication_date
+    - url
