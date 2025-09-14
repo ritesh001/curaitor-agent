@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Ensure script is executable
-        run: chmod +x test/lint.sh
+        run: chmod +x tests/lint.sh
       - run: |
           python3 -m pip install pip --upgrade
           python3 -m pip install ruff
