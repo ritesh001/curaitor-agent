@@ -25,9 +25,9 @@ except ImportError:
 
 class ExtractionAgent:
     def __init__(self, config):
-        # self.llm = OpenAI(model_name=config['llm']['model'], 
+        # self.llm = OpenAI(model_name=config['llm']['model'],
         #                   temperature=config['llm']['temperature'])
-        # self.llm = ChatGoogleGenerativeAI(model=config['llm']['model'], 
+        # self.llm = ChatGoogleGenerativeAI(model=config['llm']['model'],
         #                                   temperature=config['llm']['temperature'])
         llm_cfg = config['llm']
         provider = llm_cfg.get('provider', 'gemini').lower()
@@ -63,7 +63,7 @@ class ExtractionAgent:
                 model=model,
                 temperature=temperature
             )
-            
+
         self.splitter = RecursiveCharacterTextSplitter(chunk_size=config['llm']['chunk_size'])
         self.prompt = PromptTemplate(
             input_variables=['chunk','schema'],
