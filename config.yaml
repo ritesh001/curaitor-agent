@@ -16,8 +16,8 @@
 #     - methods
 
 input:
-  - query: "machine learning"
-  - max_days: 5
+  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. I do not want to include any studies related to solid-state electrolytes or electrode materials."
+  - max_days: 100
 
 source:
   - pdf_path: ../data/pdfs
@@ -25,22 +25,22 @@ source:
 
 llm:
   ## OpenAI
-  # model: "openai/gpt-4"
+  # - model: "openai/gpt-4"
 
   ## Gemini
-  # model: "gemini-2.5-flash"   # or "gemini-2.5-pro"; API key must be set in environment variable GOOGLE_API_KEY (current quota exceeded)
+  # - model: "gemini-2.5-flash"   # or "gemini-2.5-pro"; API key must be set in environment variable GOOGLE_API_KEY (current quota exceeded)
 
   ## Ollama
-  # provider: ollama
-  # model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
+  # - provider: ollama
+  # - model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
   
   ## openrouter
-  provider: openrouter
-  # model: "deepseek/deepseek-r1-0528:free"
-  model: "moonshotai/kimi-k2:free"
-  temperature: 0.2
-  chunk_size: 1000
+  - provider: openrouter
+  - model: "deepseek/deepseek-r1-0528:free"
+  # - model: "moonshotai/kimi-k2:free"
+  - temperature: 0.2
+  - chunk_size: 1000
 
 output:
-  format: json
-  path: ../data/output.json
+  - format: json
+  - path: ../data/output.json

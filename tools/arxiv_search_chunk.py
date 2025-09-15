@@ -14,24 +14,132 @@ from datetime import datetime
 from dateutil import tz
 import numpy as np
 import tiktoken
+import os
+import yaml, json
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
-## TODO: combine into one query => use LLM to find keywords: Yuxing
-#arXiv 的查询语法（字段如 all:, ti:, au:, abs:, cat:，支持 AND/OR/括号与引号等）。
-QUERY = 'all:"digital phenotyping"' 
-# Step 6) 定义你的研究兴趣查询集合（可自由增删）
-def make_interest_queries(core="digital phenotyping", focus="mental health"):
-    q = [
-        core,
-        f"{core} {focus}",
-        "review survey digital phenotyping"
-    ]
-    # 去重清洗
-    seen, out = set(), []
-    for s in q:
-        s = " ".join(s.split()).strip()
-        if s and s.lower() not in seen:
-            seen.add(s.lower()); out.append(s)
-    return out
+config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
+
+# print(config['llm'][1]['model'])
+
+# def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
+def get_keywords_from_llm(natural_language_query: str, model: str = None) -> list[str]:
+    """
+    Uses an LLM via OpenRouter to extract relevant keywords and phrases from a natural language query.
+
+    Args:
+        natural_language_query: The user's research question or topic.
+        model: The OpenRouter model to use (defaults to a free one).
+
+    Returns:
+        A list of keywords and phrases suitable for an arXiv search.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+
+    # A detailed prompt telling the LLM exactly what to do.
+    prompt = f"""
+    You are an expert academic researcher specializing in chemistry, biology, physics, computer science, and condensed matter physics.
+    Your task is to analyze the following user query and extract a list of precise, effective keywords and multi-word phrases for searching the arXiv database.
+    The goal is to find the most relevant academic papers.
+
+    - Identify core concepts, technical terms, and important named entities.
+    - For multi-word concepts (e.g., "machine learning potential"), keep them as a single phrase.
+    - Do not include generic words.
+    - Return ONLY a comma-separated list of these keywords and phrases. Do not add any explanation or introductory text.
+
+    User Query: "{natural_language_query}"
+
+    Keywords:
+    """
+
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            data=json.dumps({
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}]
+            })
+        )
+        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+
+        # Extract the text content from the response
+        llm_output = response.json()['choices'][0]['message']['content']
+
+        # Clean up the output and split it into a list of keywords
+        keywords = [kw.strip() for kw in llm_output.split(',') if kw.strip()]
+        
+        print(f"[INFO] LLM extracted keywords: {keywords}")
+        return keywords
+
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] API request failed: {e}")
+        return []
+    except (KeyError, IndexError) as e:
+        print(f"[ERROR] Failed to parse LLM response: {e}")
+        print(f"Raw response: {response.text}")
+        return []
+
+def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
+    """
+    Formats a list of keywords into a valid arXiv search query string.
+    Uses OR to connect keywords and quotes for multi-word phrases.
+    Limits the number of keywords to avoid hitting URL length limits.
+    """
+    if not keywords:
+        return ""
+    
+    # Take only the top N most relevant keywords (LLM usually returns them in order)
+    limited_keywords = keywords[:max_keywords]
+    
+    formatted_keywords = []
+    for kw in limited_keywords:
+        if ' ' in kw:
+            formatted_keywords.append(f'"{kw}"')  # Add quotes for phrases
+        else:
+            formatted_keywords.append(kw)
+    
+    # Use OR to cast a wider net. The RAG pipeline will handle the filtering.
+    return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
+
+
+# --- Step 1: Define a Natural Language Query and Generate Keywords with LLM ---
+
+# natural_language_query = "I want to find papers about using machine learning potentials to accelerate molecular dynamics simulations for material science."
+
+# while True:
+#     natural_language_query = input("Please enter your research query (or press Enter to exit): ")
+#     if not natural_language_query.strip():
+#         # If the user just presses Enter, exit the script gracefully.
+#         # Or, you could print a message and continue the loop.
+#         print("No query provided. Exiting.")
+#         exit()
+#     else:
+#         # If input is provided, break the loop and proceed.
+#         break
+try:
+    natural_language_query = config['input'][0]['query']
+except Exception as e:
+    raise SystemExit("[ERROR] Could not read 'query' from config.yaml. Exiting.")
+
+# Use the LLM to get keywords
+llm_model = config['llm'][1]['model']
+keywords = get_keywords_from_llm(natural_language_query, model=llm_model)
+
+# Format the keywords into the final arXiv query string
+QUERY = format_arxiv_query(keywords)
+
+if not QUERY:
+    raise SystemExit("[ERROR] Could not generate a valid query from the LLM. Exiting.")
+
+print(f"[INFO] Generated arXiv Query: {QUERY}")
 
 def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][0]['pdf_path']):
     if not os.path.exists(output_dir):
@@ -70,7 +178,7 @@ def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][
 
 tz_london = tz.gettz("Europe/London")
 now_local = datetime.now(tz_london)
-days = config['input'][0]['max_days']
+days = config['input'][1]['max_days']
 start_date = (now_local.date() - timedelta(days=days-1))  # 含今天共100天
 start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
 end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
@@ -118,9 +226,6 @@ for i, r in enumerate(results, 1):
 
 # PDF 抽取与清洗（pypdf）
 # --- Step 1: PDF download + text extract + clean ---
-import re, requests
-from io import BytesIO
-from pypdf import PdfReader
 
 def _strip_hyphenation(t: str) -> str:
     return re.sub(r"-\s*\n\s*", "", t)
@@ -181,8 +286,6 @@ for r in results:
     })
 
 print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
-
-
 
 
 #③ 切片（token级，500/100）
