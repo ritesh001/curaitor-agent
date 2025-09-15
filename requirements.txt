@@ -1,8 +1,34 @@
-scrapy
-pdfminer.six
-beautifulsoup4
+## Core runtime (required)
+scrapy              # web crawling / spiders
+pdfminer.six        # PDF extraction used by tools/pdf_parser.py
+python-dotenv.      # load .env in agent/llm_agent.py
+PyYAML              # config.yaml parsing
+requests            # HTTP requests (tools/arxiv_search_chunk.py)
+arxiv               # arXiv client (tools/arxiv_search_chunk.py)
+
+## Langchain & LLM provider support (install only providers you use)
 langchain
-langchain_google_genai
-google-generativeai
-openai
-PyYAML
+google-generativeai    # Google Generative AI client (if using Google)
+openai                 # OpenAI/OpenRouter support (if using OpenAI)
+# Provider integration helpers (optional; install per-provider if needed)
+langchain-google-genai
+langchain-ollama
+langchain-openai
+
+## Tools / extraction / embedding (optional, used by tools/)
+pypdf                 # PDF parsing in tools/arxiv_search_chunk.py
+tiktoken              # tokenization used in chunking
+sentence-transformers # embeddings & CrossEncoder
+numpy
+faiss-cpu
+
+## Date handling
+python-dateutil
+
+## HTML parsing (optional)
+beautifulsoup4
+
+# Notes:
+# - Install provider-specific langchain integrations only for the LLMs you intend to use.
+# - Heavy ML packages (torch, faiss) are platform-specific; prefer installing them
+#   manually or via conda when on macOS/GPU systems.
