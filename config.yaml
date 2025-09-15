@@ -1,19 +1,27 @@
-sources:
-  - name: arxiv
-    start_urls:
-      - https://arxiv.org/list/physics/new
-    max_items: 5  # Limit to 5 articles
-  # - name: pubmed
-  #   start_urls:
-  #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
+# sources:
+#   - name: arxiv
+#     start_urls:
+#       - https://arxiv.org/list/physics/new
+#     max_items: 5  # Limit to 5 articles
+#   # - name: pubmed
+#   #   start_urls:
+#   #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
 
-extraction:
-  schema:
-    - title
-    - authors
-    - abstract
-    - key_results
-    - methods
+# extraction:
+#   schema:
+#     - title
+#     - authors
+#     - abstract
+#     - key_results
+#     - methods
+
+input:
+  - query: "machine learning"
+  - max_days: 5
+
+source:
+  - pdf_path: ../data/pdfs
+  - chunk_path: ../data/chunks
 
 llm:
   ## OpenAI
@@ -35,4 +43,4 @@ llm:
 
 output:
   format: json
-  path: data/output.json
+  path: ../data/output.json
