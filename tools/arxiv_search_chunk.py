@@ -1,21 +1,7 @@
 from datetime import datetime, time, timedelta
 from dateutil import tz
 import arxiv
-import tiktoken
-import re, requests
-from io import BytesIO
-from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
-import numpy as np
-import faiss
-from sentence_transformers import CrossEncoder
-from collections import defaultdict
-from datetime import datetime
-from dateutil import tz
-import numpy as np
-import tiktoken
 
-## TODO: combine into one query => use LLM to find keywords: Yuxing
 #arXiv 的查询语法（字段如 all:, ti:, au:, abs:, cat:，支持 AND/OR/括号与引号等）。
 QUERY = 'all:"digital phenotyping"' 
 # Step 6) 定义你的研究兴趣查询集合（可自由增删）
@@ -86,6 +72,9 @@ for i, r in enumerate(results, 1):
 
 # PDF 抽取与清洗（pypdf）
 # --- Step 1: PDF download + text extract + clean ---
+import re, requests
+from io import BytesIO
+from pypdf import PdfReader
 
 def _strip_hyphenation(t: str) -> str:
     return re.sub(r"-\s*\n\s*", "", t)
@@ -119,6 +108,8 @@ def extract_pdf_text(pdf_url: str) -> str:
         print(f"[WARN] PDF extract failed: {e}")
         return ""
     
+    
+
 #② 规整文档（title+abstract，并尝试拼上全文）
 # --- Step 2: normalize docs from your `results` ---
 docs = []
@@ -145,9 +136,12 @@ for r in results:
 
 print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
 
+
+
+
 #③ 切片（token级，500/100）
 # --- Step 3: chunking (token-based) ---
-## TODO: save chunk => Ritesh
+import tiktoken
 enc = tiktoken.get_encoding("cl100k_base")
 
 def chunk_text(text: str, chunk_size=500, overlap=100):
@@ -180,9 +174,10 @@ print(f"[INFO] Total chunks: {len(chunks)}")
 
 #④ 向量化（Sentence-Transformers，bge-small-en）
 # --- Step 4: embeddings ---
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-
-EMB_MODEL = "BAAI/bge-small-en-v1.5"  # 多语可换 "BAAI/bge-m3" ## TODO: test different embedding models & save embeddings => Ritesh
+EMB_MODEL = "BAAI/bge-small-en-v1.5"  # 多语可换 "BAAI/bge-m3"
 emb = SentenceTransformer(EMB_MODEL)
 
 chunk_texts = [c["text"] for c in chunks]
@@ -194,7 +189,7 @@ print("[INFO] Embeddings:", X.shape)
 
 #⑤ 建索引（FAISS 内积；等价于余弦，因为已归一化）
 # --- Step 5: FAISS index ---
-
+import faiss
 dim = X.shape[1]
 index = faiss.IndexFlatIP(dim)
 index.add(X)
@@ -202,8 +197,10 @@ print("[INFO] Index size:", index.ntotal)
 
 
 
+
 #⑥ 检索 + 交叉编码器复排（MiniLM）
 # --- Step 6: Retrieval + Rerank ---
+from sentence_transformers import CrossEncoder
 
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # 轻量高性价比
 
@@ -220,6 +217,12 @@ half_life_days：领域更新快就取小些（如 45–60 天），保守些就
 
 per_doc_chunks：若希望 LLM抓到更多细节，可设为 2，在每篇里再取相邻一个段落。
 '''
+from collections import defaultdict
+from datetime import datetime
+from dateutil import tz
+import numpy as np
+
+
 
 # Step 6) 单次查询的粗排召回（FAISS）+ 交叉编码器重排
 def _retrieve_one(query, faiss_k=80):
@@ -320,7 +323,7 @@ def retrieve_recent_interest(
     return out_hits
 
 # Step 6) 友好打印（文档级）
-def pretty_print_docs(hits, max_chars=300):
+def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
     seen = set()
     for h in hits:
         did = h["doc_id"]
@@ -338,8 +341,45 @@ def pretty_print_docs(hits, max_chars=300):
         print(f"    Authors: {authors}")
         print(f"    Date  : {when}")
         print(f"    PDF   : {m.get('pdf_url','')}")
-        print(f"    Snip  : {snip}\n") ## TODO: show more context => Ritesh
+        print(f"    Snip  : {snip}\n")
 
+    """
+    打印文档级摘要；若提供 save_npz_path，则将“arXiv ID -> 该文档对应的 out_hits（chunks）”
+    保存为 .npz 文件，便于后续快速载入与复用。
+    .npz 内容（按排名顺序对齐）：
+      - 'arxiv_ids' : shape (N,)            # 每个文档的 arXiv ID
+      - 'chunk_texts' : shape (N,) object  # 若 include_text=True，则保存每个chunk的文本
+    备注：由于 'chunk_ids' / 'chunk_texts' 是变长列表，保存为 dtype=object 的数组；
+         读取时需要 np.load(..., allow_pickle=True)。
+    """
+    # 先按照 hits 中出现的顺序将 chunk 聚合到“文档(arXiv ID)”维度
+    doc_order = []           # 记录文档出现顺序（用于对齐保存）
+    doc2chunks = {}          # {arxiv_id: [{'chunk_id':..., 'text':...}, ...]}
+       
+    for h in hits:
+        aid = h["metadata"].get("arxiv_id") or h["doc_id"]  # 两者等价，这里偏向使用 arxiv_id
+        if aid not in doc2chunks:
+            doc2chunks[aid] = []
+            doc_order.append(aid)
+        doc2chunks[aid].append({
+            "chunk_id": h["chunk_id"],
+            "text": h["text"],
+        })
+    
+    # 若指定保存路径，则写入 .npz
+    if save_npz_path:
+        arxiv_ids = np.array(doc_order, dtype=object)
+        chunk_ids = np.array([[c["chunk_id"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
+        save_kwargs = {
+            "arxiv_ids": arxiv_ids,
+            "chunk_ids": chunk_ids,
+        }
+        chunk_texts = np.array([[c["text"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
+        save_kwargs["chunk_texts"] = chunk_texts
+    
+        np.savez(save_npz_path, **save_kwargs)
+        print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
+        
 # === 用法示例 ===
 interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
 hits = retrieve_recent_interest(
@@ -349,10 +389,45 @@ hits = retrieve_recent_interest(
     per_doc_chunks=1,   # 每篇1段，便于LLM摘要
     alpha_recency=0.35  # 越大越偏新
 )
-pretty_print_docs(hits)
+pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
+
+
+# def load_hits_from_npz(npz_path: str):
+#     data = np.load(npz_path, allow_pickle=True)
+#     arxiv_ids = data["arxiv_ids"]                # (N,)
+#     chunk_ids_lists = data["chunk_ids"]          # (N,) object -> list[str]
+#     chunk_texts_lists = data.get("chunk_texts")  # (N,) object -> list[str] or None
+
+#     hits = []
+#     for i, aid in enumerate(arxiv_ids):
+#         aid = str(aid)
+#         cids = list(chunk_ids_lists[i])
+#         if chunk_texts_lists is None:
+#             # 没有文本，只能先返回“占位”hits（见方式 B 回灌做法）
+#             for cid in cids:
+#                 hits.append({
+#                     "text": None,                # 无文本
+#                     "doc_id": aid,
+#                     "chunk_id": cid,
+#                 })
+#         else:
+#             texts = list(chunk_texts_lists[i])
+#             # 与 cids 一一对应
+#             for cid, t in zip(cids, texts):
+#                 hits.append({
+#                     "text": t,
+#                     "doc_id": aid,
+#                     "chunk_id": cid,
+#                 })
+#     return hits
+
+
+# test = load_hits_from_npz("arxiv_out_hits.npz")
+
 
 #⑦ 组包
 # --- Step 7: pack context ---
+import tiktoken
 
 def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
     enc = tiktoken.get_encoding(model_enc)
