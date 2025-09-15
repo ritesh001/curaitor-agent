@@ -1,4 +1,3 @@
-<<<<<<<<< Temporary merge branch 1
 ## requirements.txt - consolidated for this project
 
 ## Core runtime (required)
@@ -71,5 +70,5 @@ scrapy==2.13.3
 sentence_transformers==5.1.0
 tiktoken==0.11.0
 pylint>=3.2
->>>>>>>>> Temporary merge branch 2
+
 
