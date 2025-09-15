@@ -5,10 +5,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    
-      - uses: actions/checkout@v3
-      - run: pip install -r requirements.txt
+
+    - uses: actions/checkout@v3
+    - run: pip install -r requirements.txt
 
 
-      - name:  Test all files
-        run: python -m unittest discover -s tests -p "test_*.py"
+    - name:  Test all files
+      run: python -m unittest discover -s tests -p "test_*.py"
+
+    # 4. Run pylint
+    - name: Run pylint
+      run: |
+        pylint $(git ls-files '*.py')
