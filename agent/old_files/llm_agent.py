@@ -2,7 +2,7 @@ from langchain import OpenAI, LLMChain, PromptTemplate
 # from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 load_dotenv() ## to read contents in .env file
 import json
 import os
@@ -25,8 +25,10 @@ except ImportError:
 
 class ExtractionAgent:
     def __init__(self, config):
-        # self.llm = OpenAI(model_name=config['llm']['model'], temperature=config['llm']['temperature'])
-        # self.llm = ChatGoogleGenerativeAI(model=config['llm']['model'], temperature=config['llm']['temperature'])
+        # self.llm = OpenAI(model_name=config['llm']['model'],
+        #                   temperature=config['llm']['temperature'])
+        # self.llm = ChatGoogleGenerativeAI(model=config['llm']['model'],
+        #                                   temperature=config['llm']['temperature'])
         llm_cfg = config['llm']
         provider = llm_cfg.get('provider', 'gemini').lower()
         model = llm_cfg['model']
@@ -61,7 +63,7 @@ class ExtractionAgent:
                 model=model,
                 temperature=temperature
             )
-            
+
         self.splitter = RecursiveCharacterTextSplitter(chunk_size=config['llm']['chunk_size'])
         self.prompt = PromptTemplate(
             input_variables=['chunk','schema'],
