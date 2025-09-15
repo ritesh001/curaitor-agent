@@ -14,7 +14,13 @@ from datetime import datetime
 from dateutil import tz
 import numpy as np
 import tiktoken
+from pathlib import Path
+import requests
+import os
+import yaml
 
+config = yaml.safe_load(open("config.yaml"))
+# print(config['input'][0]['query'])
 ## TODO: combine into one query => use LLM to find keywords: Yuxing
 #arXiv 的查询语法（字段如 all:, ti:, au:, abs:, cat:，支持 AND/OR/括号与引号等）。
 QUERY = 'all:"digital phenotyping"' 
@@ -33,15 +39,48 @@ def make_interest_queries(core="digital phenotyping", focus="mental health"):
             seen.add(s.lower()); out.append(s)
     return out
 
-# 伦敦时区 & 时间窗：过去10天（含今天）
+def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][0]['pdf_path']):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if pdf_url:
+        pdf_response = requests.get(pdf_url)
+        pdf_response.raise_for_status()
+        pdf_filename = pdf_url.split("/")[-1]
+        pdf_filename += '.pdf'
+        pdf_path = Path(output_dir) / pdf_filename
+        with open(pdf_path, 'wb') as f:
+            f.write(pdf_response.content)
+        print(f"Downloaded: {pdf_filename}")
+    else:
+        print("No PDF URL provided.")
+
+    # response = requests.get(ARXIV_API_URL, params=params)
+    # response.raise_for_status()
+
+    # entries = response.json().get('feed', {}).get('entry', [])
+    # for entry in entries:
+    #     pdf_url = entry.get('link', [])[1].get('href')  # Get the PDF link
+    #     title = entry.get('title', '').replace('/', '_').replace('\\', '_')  # Clean title for filename
+    #     pdf_filename = f"{title}.pdf"
+    #     pdf_path = Path(output_dir) / pdf_filename
+
+    #     if not pdf_path.exists():
+    #         pdf_response = requests.get(pdf_url)
+    #         pdf_response.raise_for_status()
+    #         with open(pdf_path, 'wb') as f:
+    #             f.write(pdf_response.content)
+    #         print(f"Downloaded: {pdf_filename}")
+    #     else:
+    #         print(f"File already exists: {pdf_filename}")
+
 tz_london = tz.gettz("Europe/London")
 now_local = datetime.now(tz_london)
-days = 100
+days = config['input'][0]['max_days']
 start_date = (now_local.date() - timedelta(days=days-1))  # 含今天共100天
 start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
 end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
 
-# 是否按“最后更新(updated)”筛选；默认 False=按首次提交(published)
 USE_UPDATED = False
 
 client = arxiv.Client(page_size=100, delay_seconds=3)  # 分页+限速
@@ -70,7 +109,7 @@ print(f"Found {len(results)} results between {start_dt.date()} and {end_dt.date(
 for i, r in enumerate(results, 1):
     authors = ", ".join(a.name for a in r.authors)
     when_local = (r.updated if USE_UPDATED else r.published).astimezone(tz_london).strftime("%Y-%m-%d %H:%M")
-    pdf = r.pdf_url or r.entry_id.replace("abs", "pdf")
+    pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
     cats = ",".join(r.categories)
     abstract = " ".join(r.summary.split())  # 去掉多余换行/空白
     
@@ -78,11 +117,10 @@ for i, r in enumerate(results, 1):
           f"    Authors: {authors}\n"
           f"    Time(UK): {when_local}\n"
           f"    Cats: {cats}\n"
-          f"    PDF: {pdf}\n"
-          f"    Abs: {r.entry_id}\n"
+          f"    PDF: {pdf_url}\n"
+        #   f"    Abs: {r.entry_id}\n"
           f"    Abstract: {abstract}\n")
-
-
+    download_arxiv_pdfs(pdf_url=pdf_url, output_dir=config['source'][0]['pdf_path'])
 
 # PDF 抽取与清洗（pypdf）
 # --- Step 1: PDF download + text extract + clean ---
@@ -147,7 +185,7 @@ print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs
 
 #③ 切片（token级，500/100）
 # --- Step 3: chunking (token-based) ---
-## TODO: save chunk => Ritesh
+## TODO: save chunk => Cao
 enc = tiktoken.get_encoding("cl100k_base")
 
 def chunk_text(text: str, chunk_size=500, overlap=100):
