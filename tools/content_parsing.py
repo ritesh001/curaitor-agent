@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Iterable, Optional
 import os, sys
+import re
 
 import pandas as pd
 
@@ -150,6 +151,75 @@ def extract_pdf_components(
         )
 
     return {"texts": texts, "tables": tables, "images": images, "doc": doc}
+
+def _normalize_heading(h: str) -> str:
+    return re.sub(r"[^a-z]+", " ", (h or "").strip().lower()).strip()
+
+def texts_cut_after_sections(
+    texts: List[Dict[str, Any]],
+    stop_headings: Tuple[str, ...] = (
+        "references", "bibliography", "acknowledgments", "acknowledgements",
+        "supplementary materials", "supplementary material", "appendix",
+    ),
+) -> List[Dict[str, Any]]:
+    stops = {s.lower() for s in stop_headings}
+    for i, it in enumerate(texts):
+        txt = (it.get("text") or "").strip()
+        if not txt:
+            continue
+        if it.get("type") == "heading":
+            if _normalize_heading(txt) in stops:
+                return texts[:i]
+        # Fallback: sometimes headings are classified as body text
+        if _normalize_heading(txt) in stops:
+            return texts[:i]
+    return texts
+
+def texts_to_plaintext(
+    texts: List[Dict[str, Any]],
+    *,
+    cut_after_headings: bool = True,
+    stop_headings: Tuple[str, ...] = (
+        "references", "bibliography", "acknowledgments", "acknowledgements",
+        "supplementary materials", "supplementary material", "appendix", "supporting information",
+        "funding", "conflict of interest", "competing interests", "author contributions",
+        "data availability", "code availability", "ethics approval", "consent to participate",
+    ),
+    drop_emails: bool = True,
+    strip_hyphenation: bool = True,
+    normalize_ws: bool = True,
+) -> str:
+    """
+    Convert Docling 'texts' (list of dicts) into a single cleaned string.
+    """
+    if cut_after_headings:
+        texts = texts_cut_after_sections(texts, stop_headings=stop_headings)
+
+    pieces: List[str] = []
+    email_re = re.compile(r"\b[\w\.-]+@[\w\.-]+\.\w+\b")
+    for it in texts:
+        s = (it.get("text") or "").strip()
+        if not s:
+            continue
+        if drop_emails and email_re.search(s):
+            continue
+        # Render headings on their own line to keep structure
+        if it.get("type") == "heading":
+            pieces.append(s)
+        else:
+            pieces.append(s)
+
+    out = "\n\n".join(pieces)
+
+    if strip_hyphenation:
+        out = re.sub(r"-\s*\n\s*", "", out)
+    if normalize_ws:
+        out = out.replace("\r\n", "\n").replace("\r", "\n")
+        out = re.sub(r"[ \t]+\n", "\n", out)
+        out = re.sub(r"\n{3,}", "\n\n", out)
+        out = re.sub(r"[ \t]{2,}", " ", out)
+
+    return out
 
 # -------- Example usage --------
 if __name__ == "__main__":

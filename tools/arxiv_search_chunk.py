@@ -1,4 +1,6 @@
 from datetime import datetime, time, timedelta
+from urllib import response
+from xml.parsers.expat import model
 from dateutil import tz
 import arxiv
 import tiktoken
@@ -6,39 +8,71 @@ import re, requests
 from io import BytesIO
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
+from sentence_transformers import CrossEncoder
 import numpy as np
 import faiss
-from sentence_transformers import CrossEncoder
 from collections import defaultdict
 from datetime import datetime
+import time as time_module  # for retry sleeps; avoid clashing with datetime.time
 from dateutil import tz
 import numpy as np
 import tiktoken
 import os
 import yaml, json
 from pathlib import Path
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
+from content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
-
 # print(config['llm'][1]['model'])
+provider = config['llm'][0]['provider']
+
+if provider == 'openrouter':
+    api_key = os.getenv("OPENROUTER_API_KEY")
+elif provider == "openai":
+    api_key = os.getenv("OPENAI_API_KEY")
+elif provider == "google":
+    api_key = os.getenv("GOOGLE_API_KEY")
+else:
+    raise ValueError(f"Unsupported LLM provider: {provider}")
 
 # def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
 def get_keywords_from_llm(natural_language_query: str, model: str = None) -> list[str]:
     """
-    Uses an LLM via OpenRouter to extract relevant keywords and phrases from a natural language query.
+    Uses an LLM (OpenRouter | OpenAI | Google Gemini) to extract keywords and phrases from a natural language query.
 
     Args:
         natural_language_query: The user's research question or topic.
-        model: The OpenRouter model to use (defaults to a free one).
++        model: The model name. For provider='openrouter', pass OpenRouter model id.
++               For provider='openai' pass OpenAI model id (e.g., 'gpt-4o-mini').
++               For provider='google' pass Gemini model id (e.g., 'gemini-1.5-flash' or 'gemini-2.0-flash-exp').
 
     Returns:
         A list of keywords and phrases suitable for an arXiv search.
     """
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    # Ensure API key is set for the chosen provider
+    env_hint = {
+        "openrouter": "OPENROUTER_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "google": "GOOGLE_API_KEY",
+    }.get(provider, "API_KEY")
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+        raise ValueError(f"No API key set for provider '{provider}'. Please export {env_hint}.")
+
+    def _normalize_model_for_provider(p: str, m: str | None) -> str | None:
+        if not m:
+            return None
+        m = m.strip()
+        # If user accidentally passes OpenRouter-style names to direct providers, trim prefixes/suffixes
+        if p in ("openai", "google"):
+            if "/" in m:
+                m = m.split("/")[-1]   # keep last segment
+            if ":" in m:
+                m = m.split(":")[0]    # drop qualifiers like ':free'
+        return m
+
+    model = _normalize_model_for_provider(provider, model)
 
     # A detailed prompt telling the LLM exactly what to do.
     prompt = f"""
@@ -56,36 +90,112 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
     Keywords:
     """
 
-    try:
-        response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            data=json.dumps({
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}]
-            })
-        )
-        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+    max_retries = 5
+    backoff_base = 1.6
 
-        # Extract the text content from the response
-        llm_output = response.json()['choices'][0]['message']['content']
+    def _sleep(attempt: int, retry_after: str | None):
+        if retry_after and retry_after.isdigit():
+            wait = float(retry_after)
+        else:
+            wait = backoff_base ** attempt
+        time_module.sleep(min(wait, 30))
 
-        # Clean up the output and split it into a list of keywords
-        keywords = [kw.strip() for kw in llm_output.split(',') if kw.strip()]
-        
-        print(f"[INFO] LLM extracted keywords: {keywords}")
-        return keywords
+    def _parse_keywords(text: str) -> list[str]:
+        return [kw.strip() for kw in (text or "").split(",") if kw.strip()]
 
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] API request failed: {e}")
-        return []
-    except (KeyError, IndexError) as e:
-        print(f"[ERROR] Failed to parse LLM response: {e}")
-        print(f"Raw response: {response.text}")
-        return []
+    for attempt in range(1, max_retries + 1):
+        try:
+            if provider == "openrouter":
+                url = "https://openrouter.ai/api/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    # optional but recommended by OpenRouter
+                    "HTTP-Referer": "http://localhost",
+                    "X-Title": "curaitor-agent",
+                }
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0,
+                }
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                if response.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, response.headers.get("Retry-After"))
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                llm_output = data["choices"][0]["message"]["content"]
+
+            elif provider == "openai":
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "model": model or "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0,
+                }
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                if response.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, response.headers.get("Retry-After"))
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                llm_output = data["choices"][0]["message"]["content"]
+
+            elif provider == "google":
+                # Google Generative Language API (Gemini)
+                g_model = model or "gemini-1.5-flash"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent"
+                params = {"key": api_key}
+                headers = {"Content-Type": "application/json"}
+                payload = {
+                    "contents": [
+                        {"role": "user", "parts": [{"text": prompt}]}
+                    ],
+                    "generationConfig": {"temperature": 0},
+                }
+                response = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                if response.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, response.headers.get("Retry-After"))
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                # Join all text parts from the top candidate
+                parts = data["candidates"][0]["content"]["parts"]
+                llm_output = " ".join(p.get("text", "") for p in parts if isinstance(p, dict))
+
+            else:
+                raise ValueError(f"Unsupported LLM provider: {provider}")
+
+            keywords = _parse_keywords(llm_output)
+            print(f"[INFO] LLM ({provider}:{model}) extracted keywords: {keywords}")
+            return keywords
+
+        except requests.HTTPError as e:
+            status = e.response.status_code if e.response is not None else "N/A"
+            body = e.response.text[:500] if e.response is not None else ""
+            print(f"[ERROR] HTTP {status} from {provider}: {body}")
+            if status in (429, 500, 502, 503, 504) and attempt < max_retries:
+                _sleep(attempt, e.response.headers.get("Retry-After") if e.response else None)
+                continue
+            return []
+        except (KeyError, IndexError, ValueError) as e:
+            print(f"[ERROR] Failed to parse {provider} response: {e}")
+            try:
+                print(f"Raw response: {response.text[:500]}")
+            except Exception:
+                pass
+            return []
+        except requests.RequestException as e:
+            print(f"[ERROR] API request failed: {e}")
+            if attempt < max_retries:
+                _sleep(attempt, None)
+                continue
+            return []
 
 def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
     """
@@ -108,7 +218,6 @@ def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: in
     
     # Use OR to cast a wider net. The RAG pipeline will handle the filtering.
     return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
-
 
 # --- Step 1: Define a Natural Language Query and Generate Keywords with LLM ---
 
@@ -224,52 +333,62 @@ for i, r in enumerate(results, 1):
           f"    Abstract: {abstract}\n")
     download_arxiv_pdfs(pdf_url=pdf_url, output_dir=config['source'][0]['pdf_path'])
 
-# PDF 抽取与清洗（pypdf）
-# --- Step 1: PDF download + text extract + clean ---
+# not needed as we are using content_parsing.py
 
-def _strip_hyphenation(t: str) -> str:
-    return re.sub(r"-\s*\n\s*", "", t)
+# def _strip_hyphenation(t: str) -> str:
+#     return re.sub(r"-\s*\n\s*", "", t)
 
-def _normalize_ws(t: str) -> str:
-    t = t.replace("\r\n", "\n").replace("\r", "\n")
-    t = re.sub(r"\n{3,}", "\n\n", t)  # 多个空行压成一个
-    paras = [re.sub(r"[ \t]*\n[ \t]*", " ", p).strip() for p in t.split("\n\n")]
-    paras = [re.sub(r"\s{2,}", " ", p) for p in paras if p]
-    return "\n\n".join(paras).strip()
+# def _normalize_ws(t: str) -> str:
+#     t = t.replace("\r\n", "\n").replace("\r", "\n")
+#     t = re.sub(r"\n{3,}", "\n\n", t)  # 多个空行压成一个
+#     paras = [re.sub(r"[ \t]*\n[ \t]*", " ", p).strip() for p in t.split("\n\n")]
+#     paras = [re.sub(r"\s{2,}", " ", p) for p in paras if p]
+#     return "\n\n".join(paras).strip()
 
-def _cut_refs(t: str) -> str:
-    patt = re.compile(r"\n\s*(references|bibliography|acknowledg(e)?ments)\s*\n", re.I)
-    last = None
-    for m in patt.finditer("\n"+t+"\n"):
-        last = m
-    return t[:last.start()].strip() if last else t
+# def _cut_refs(t: str) -> str:
+#     patt = re.compile(r"\n\s*(references|bibliography|acknowledg(e)?ments)\s*\n", re.I)
+#     last = None
+#     for m in patt.finditer("\n"+t+"\n"):
+#         last = m
+#     return t[:last.start()].strip() if last else t
 
-def extract_pdf_text(pdf_url: str) -> str:
-    try:
-        r = requests.get(pdf_url, timeout=60)
-        r.raise_for_status()
-        reader = PdfReader(BytesIO(r.content))
-        pages = [(p.extract_text() or "") for p in reader.pages]
-        raw = "\n\n".join(pages)
-        raw = _strip_hyphenation(raw)
-        raw = _normalize_ws(raw)
-        raw = _cut_refs(raw)
-        return raw
-    except Exception as e:
-        print(f"[WARN] PDF extract failed: {e}")
-        return ""
-    
-    
+# def extract_pdf_text(pdf_url: str) -> str:
+#     try:
+#         r = requests.get(pdf_url, timeout=60)
+#         r.raise_for_status()
+#         reader = PdfReader(BytesIO(r.content))
+#         pages = [(p.extract_text() or "") for p in reader.pages]
+#         raw = "\n\n".join(pages)
+#         raw = _strip_hyphenation(raw)
+#         raw = _normalize_ws(raw)
+#         raw = _cut_refs(raw)
+#         return raw
+#     except Exception as e:
+#         print(f"[WARN] PDF extract failed: {e}")
+#         return ""
 
-#② 规整文档（title+abstract，并尝试拼上全文）
 # --- Step 2: normalize docs from your `results` ---
 docs = []
 for r in results: 
     arxiv_id = r.entry_id.split("/")[-1]
     pdf_url  = r.pdf_url or r.entry_id.replace("abs", "pdf")
     title_abs = f"{r.title}\n\n{(' '.join(r.summary.split())).strip()}"
-    pdf_text = extract_pdf_text(pdf_url)
-    full_text = (title_abs + ("\n\n" + pdf_text if pdf_text else "")).strip()
+    # pdf_text = extract_pdf_text(pdf_url)
+    # pdf_file = open(config['source'][0]['pdf_path'] + '/' + pdf_url, 'rb')
+    pdf_filename = pdf_url.split("/")[-1]
+    pdf_filename += '.pdf'
+    pdf_path = Path(config['source'][0]['pdf_path']) / pdf_filename
+    # pdf_text = extract_pdf_components(pdf_path)['texts']
+    try:
+        comps = extract_pdf_components(pdf_path)
+        # Convert Docling items to a single cleaned plaintext (cuts after References, normalizes)
+        body_text = texts_to_plaintext(comps['texts'])
+    except Exception as e:
+        print(f"[WARN] Docling parse failed for {pdf_filename}: {e}")
+        body_text = ""
+    # full_text = (title_abs + ("\n\n" + body_text if body_text else "")).strip()
+    full_text = ("search_document: " + title_abs + ("\n\n" + body_text if body_text else "")).strip() ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
+    # print(full_text)
 
     docs.append({
         "doc_id": arxiv_id,
@@ -287,13 +406,14 @@ for r in results:
 
 print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
 
-
-#③ 切片（token级，500/100）
 # --- Step 3: chunking (token-based) ---
 ## TODO: save chunk => Ritesh
 enc = tiktoken.get_encoding("cl100k_base")
 
-def chunk_text(text: str, chunk_size=500, overlap=100):
+chunk_size = config['rag'][4]['chunk_size']
+overlap = config['rag'][5]['overlap']
+
+def chunk_text(text: str, chunk_size: int = chunk_size, overlap: int = overlap):
     if not text.strip():
         return []
     toks = enc.encode(text)
@@ -309,7 +429,7 @@ def chunk_text(text: str, chunk_size=500, overlap=100):
 
 chunks = []
 for d in docs:
-    parts = chunk_text(d["text"], 500, 100)
+    parts = chunk_text(d["text"], chunk_size, overlap)
     for j, p in enumerate(parts):
         chunks.append({
             "text": p,
@@ -320,37 +440,24 @@ for d in docs:
 
 print(f"[INFO] Total chunks: {len(chunks)}")
 
-
-#④ 向量化（Sentence-Transformers，bge-small-en）
 # --- Step 4: embeddings ---
-from sentence_transformers import SentenceTransformer
-import numpy as np
 
-EMB_MODEL = "BAAI/bge-small-en-v1.5"  # 多语可换 "BAAI/bge-m3"
-emb = SentenceTransformer(EMB_MODEL)
+# EMB_MODEL = "BAAI/bge-small-en-v1.5"
+EMB_MODEL = config['rag'][3]['embedding_model']
+emb = SentenceTransformer(EMB_MODEL, trust_remote_code=True)
 
 chunk_texts = [c["text"] for c in chunks]
 X = emb.encode(chunk_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=True)
 X = np.asarray(X, dtype="float32")
 print("[INFO] Embeddings:", X.shape)
 
-
-
-#⑤ 建索引（FAISS 内积；等价于余弦，因为已归一化）
 # --- Step 5: FAISS index ---
-import faiss
 dim = X.shape[1]
 index = faiss.IndexFlatIP(dim)
 index.add(X)
 print("[INFO] Index size:", index.ntotal)
 
-
-
-
-#⑥ 检索 + 交叉编码器复排（MiniLM）
 # --- Step 6: Retrieval + Rerank ---
-from sentence_transformers import CrossEncoder
-
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # 轻量高性价比
 
 # --- Step 6b: Multi-query + doc-level rerank + recency boost ---
@@ -366,12 +473,6 @@ half_life_days：领域更新快就取小些（如 45–60 天），保守些就
 
 per_doc_chunks：若希望 LLM抓到更多细节，可设为 2，在每篇里再取相邻一个段落。
 '''
-from collections import defaultdict
-from datetime import datetime
-from dateutil import tz
-import numpy as np
-
-
 
 # Step 6) 单次查询的粗排召回（FAISS）+ 交叉编码器重排
 def _retrieve_one(query, faiss_k=80):
@@ -530,16 +631,15 @@ def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
         print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
         
 # === 用法示例 ===
-interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
+# interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
 hits = retrieve_recent_interest(
-    interest_queries,
+    natural_language_query,
     faiss_per_query=80,
     final_docs=12,
     per_doc_chunks=1,   # 每篇1段，便于LLM摘要
     alpha_recency=0.35  # 越大越偏新
 )
 pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
-
 
 # def load_hits_from_npz(npz_path: str):
 #     data = np.load(npz_path, allow_pickle=True)
@@ -573,10 +673,7 @@ pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
 
 # test = load_hits_from_npz("arxiv_out_hits.npz")
 
-
-#⑦ 组包
 # --- Step 7: pack context ---
-import tiktoken
 
 def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
     enc = tiktoken.get_encoding(model_enc)
