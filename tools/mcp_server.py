@@ -9,29 +9,6 @@ from mcp.server.fastmcp import FastMCP
 
 PAPER_DIR = "papers"
 
-
-# # Initialize FastMCP server
-# def parse_args():
-#     """Parse command line arguments for MCP server."""
-#     parser = argparse.ArgumentParser(description="Paper Search MCP Server")
-#     parser.add_argument('--port', type=int, default=50001, help='Server port (default: 50001)')
-#     parser.add_argument('--host', default='0.0.0.0', help='Server host (default: 0.0.0.0)')
-#     parser.add_argument('--log-level', default='INFO', 
-#                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-#                        help='Logging level (default: INFO)')
-#     try:
-#         args = parser.parse_args()
-#     except SystemExit:
-#         class Args:
-#             port = 50001
-#             host = '0.0.0.0'
-#             log_level = 'INFO'
-#         args = Args()
-#     return args
-
-# args = parse_args()
-# mcp = FastMCP("paper_search", port=args.port, host=args.host)
-
 mcp = FastMCP("paper_search")
 
 @mcp.tool()
