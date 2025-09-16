@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 # from pathlib import Path
 # import argparse
 
-PAPER_DIR = "papers"
+PAPER_DIR = "data/agent_papers"
 
 mcp = FastMCP("paper_search")
 
