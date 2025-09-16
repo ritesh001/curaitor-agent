@@ -7,21 +7,33 @@ from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
+import yaml
 
-# use_model = "deepseek"
-use_model = "gpt-4o"
+# models
+config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 
-if use_model == "deepseek":
-    model = LiteLlm(model="openrouter/deepseek/deepseek-r1",
-                    api_key=os.getenv("OPENROUTER_API_KEY"),
-                    api_base="https://openrouter.ai/api/v1"
+provider = config["llm"][0]["provider"]
+use_model = config["llm"][1]["model"]
+
+print(f"openrouter/{use_model}")
+
+if provider == "openai":
+    model = LiteLlm(
+        model=use_model,
+        api_key=os.getenv("OPENAI_API_KEY"),
+        api_base="https://api.openai.com/v1"
     )
-if use_model == "gpt-4o":
-    model = LiteLlm(model="openai/gpt-4o",
-                    api_key=os.getenv("OPENAI_API_KEY"),
-                    api_base="https://api.openai.com/v1"
+if provider == "openrouter":
+    model = LiteLlm(
+        model=f"openrouter/{use_model}",
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        api_base="https://openrouter.ai/api/v1"
     )
+else:
+    print(f"Provider {provider} is not supported.")
 
+
+# MCP toolset
 mcp_toolset = MCPToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(

@@ -1,0 +1,12 @@
+{
+  "2405.11821v1": {
+    "title": "A Three-Phase Analysis of Synergistic Effects During Co-pyrolysis of Algae and Wood for Biochar Yield Using Machine Learning",
+    "authors": [
+      "Subhadeep Chakrabarti",
+      "Saish Shinde"
+    ],
+    "summary": "Pyrolysis techniques have served to be a groundbreaking technique for\neffectively utilising natural and man-made biomass products like plastics,\nwood, crop residue, fruit peels etc. Recent advancements have shown a greater\nyield of essential products like biochar, bio-oil and other non-condensable\ngases by blending different biomasses in a certain ratio. This synergy effect\nof combining two pyrolytic raw materials i.e co-pyrolysis of algae and wood\nbiomass has been systematically studied and grouped into 3 phases in this\nresearch paper-kinetic analysis of co-pyrolysis, correlation among proximate\nand ultimate analysis with bio-char yield and lastly grouping of different\nweight ratios based on biochar yield up to a certain percentage. Different ML\nand DL algorithms have been utilized for regression and classification\ntechniques to give a comprehensive overview of the effect of the synergy of two\ndifferent biomass materials on biochar yield. For the first phase, the best\nprediction of biochar yield was obtained by using a decision tree regressor\nwith a perfect MSE score of 0.00, followed by a gradient-boosting regressor.\nThe second phase was analyzed using both ML and DL techniques. Within ML, SVR\nproved to be the most convenient model with an accuracy score of 0.972 with DNN\nemployed for deep learning technique. Finally, for the third phase, binary\nclassification was applied to biochar yield with and without heating rate for\nbiochar yield percentage above and below 40%. The best technique for ML was\nSupport Vector followed by Random forest while ANN was the most suitable Deep\nLearning Technique.",
+    "pdf_url": "http://arxiv.org/pdf/2405.11821v1",
+    "published": "2024-05-20"
+  }
+}
