@@ -4,6 +4,7 @@ import arxiv
 import os
 import requests
 import json
+import csv
 
 def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
     """
@@ -245,6 +246,7 @@ for r in results:
         "title": r.title,
         "text": full_text,
         "metadata": {
+            "title": r.title, # Add this line
             "arxiv_id": arxiv_id,
             "entry_id": r.entry_id,
             "pdf_url": pdf_url,
@@ -443,7 +445,7 @@ def retrieve_recent_interest(
     return out_hits
 
 # Step 6) 友好打印（文档级）
-def pretty_print_docs(hits, max_chars=300):
+def pretty_print_docs(hits, max_chars=500):
     seen = set()
     for h in hits:
         did = h["doc_id"]
@@ -463,6 +465,37 @@ def pretty_print_docs(hits, max_chars=300):
         print(f"    PDF   : {m.get('pdf_url','')}")
         print(f"    Snip  : {snip}\n")
 
+def save_hits_to_csv(hits, filename="search_results.csv", max_chars=500):
+    """Saves the top unique documents from the hits to a CSV file."""
+    headers = ['arXiv_ID', 'Title', 'Authors', 'Published_Date', 'PDF_URL', 'Snippet']
+    seen = set()
+    
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(headers)
+        
+        for h in hits:
+            did = h["doc_id"]
+            if did in seen:
+                continue
+            seen.add(did)
+            
+            m = h["metadata"]
+            
+            arxiv_id = m.get('arxiv_id', '')
+            title = m.get("title", "")
+            authors = ", ".join(m.get("authors", [])) or "Unknown"
+            when = m.get("published", "") or ""
+            pdf_url = m.get('pdf_url', '')
+            snip = h["text"].strip().replace("\n", " ")
+            # if len(snip) > max_chars: 
+            #     snip = snip[:max_chars] + " ..."
+
+            writer.writerow([arxiv_id, title, authors, when, pdf_url, snip])
+    
+    print(f"\n[INFO] Successfully saved {len(seen)} results to {filename}")
+
+
 # === 用法示例 ===
 # interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
 interest_queries = make_interest_queries(keywords)
@@ -474,7 +507,7 @@ hits = retrieve_recent_interest(
     alpha_recency=0.35  # 越大越偏新
 )
 pretty_print_docs(hits)
-
+save_hits_to_csv(hits) # Add this line to save the results
 
 
 #⑦ 组包
