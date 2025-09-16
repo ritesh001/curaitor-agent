@@ -16,8 +16,8 @@
 #     - methods
 
 input:
-  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. I do not want to include any studies related to solid-state electrolytes or electrode materials."
-  - max_days: 100
+  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. I do not want to include any studies related to solid-state electrolytes or electrode materials. Extract all data on ionic conductivity, viscosity, and temperature dependence of liquid electrolytes, including any additives used to enhance performance."
+  - max_days: 10
 
 source:
   - pdf_path: ../data/pdfs
@@ -25,7 +25,9 @@ source:
 
 llm:
   ## OpenAI
-  # - model: "openai/gpt-4"
+  - provider: openai
+  - model: "openai/gpt-4"
+  - model: "openai/gpt-4"
 
   ## Gemini
   # - model: "gemini-2.5-flash"   # or "gemini-2.5-pro"; API key must be set in environment variable GOOGLE_API_KEY (current quota exceeded)
@@ -35,11 +37,20 @@ llm:
   # - model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
   
   ## openrouter
-  - provider: openrouter
-  - model: "deepseek/deepseek-r1-0528:free"
+  # - provider: openrouter
+  # - model: "deepseek/deepseek-r1-0528:free"
   # - model: "moonshotai/kimi-k2:free"
+  # - model: "google/gemini-2.0-flash-exp:free"
+  
   - temperature: 0.2
+
+rag:
+  - top_k: 5
+  - score_threshold: 0.1
+  - per_doc_chunks: 2
+  - embedding_model: "nomic-ai/nomic-embed-text-v1.5"
   - chunk_size: 1000
+  - overlap: 100
 
 output:
   - format: json
