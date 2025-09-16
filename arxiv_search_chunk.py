@@ -1,39 +1,149 @@
 from datetime import datetime, time, timedelta
 from dateutil import tz
 import arxiv
+import os
+import requests
+import json
 
-#arXiv 的查询语法（字段如 all:, ti:, au:, abs:, cat:，支持 AND/OR/括号与引号等）。
-QUERY = 'all:"digital phenotyping"' 
-# Step 6) 定义你的研究兴趣查询集合（可自由增删）
-def make_interest_queries(core="digital phenotyping", focus="mental health"):
-    q = [
-        core,
-        f"{core} {focus}",
-        "review survey digital phenotyping"
-    ]
-    # 去重清洗
-    seen, out = set(), []
-    for s in q:
-        s = " ".join(s.split()).strip()
-        if s and s.lower() not in seen:
-            seen.add(s.lower()); out.append(s)
-    return out
+def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
+    """
+    Uses an LLM via OpenRouter to extract relevant keywords and phrases from a natural language query.
 
-# 伦敦时区 & 时间窗：过去10天（含今天）
-tz_london = tz.gettz("Europe/London")
-now_local = datetime.now(tz_london)
-days = 100
-start_date = (now_local.date() - timedelta(days=days-1))  # 含今天共100天
-start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
-end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
+    Args:
+        natural_language_query: The user's research question or topic.
+        model: The OpenRouter model to use (defaults to a free one).
 
-# 是否按“最后更新(updated)”筛选；默认 False=按首次提交(published)
+    Returns:
+        A list of keywords and phrases suitable for an arXiv search.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+
+    # A detailed prompt telling the LLM exactly what to do.
+    prompt = f"""
+    You are an expert academic researcher specializing in chemistry, biology, physics, computer science, and condensed matter physics.
+    Your task is to analyze the following user query and extract a list of precise, effective keywords and multi-word phrases for searching the arXiv database.
+    The goal is to find the most relevant academic papers.
+
+    - Identify core concepts, technical terms, and important named entities.
+    - For multi-word concepts (e.g., "machine learning potential"), keep them as a single phrase.
+    - Do not include generic words.
+    - Return ONLY a comma-separated list of these keywords and phrases. Do not add any explanation or introductory text.
+
+    User Query: "{natural_language_query}"
+
+    Keywords:
+    """
+
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            data=json.dumps({
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}]
+            })
+        )
+        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+
+        # Extract the text content from the response
+        llm_output = response.json()['choices'][0]['message']['content']
+
+        # Clean up the output and split it into a list of keywords
+        keywords = [kw.strip() for kw in llm_output.split(',') if kw.strip()]
+        
+        print(f"[INFO] LLM extracted keywords: {keywords}")
+        return keywords
+
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] API request failed: {e}")
+        return []
+    except (KeyError, IndexError) as e:
+        print(f"[ERROR] Failed to parse LLM response: {e}")
+        print(f"Raw response: {response.text}")
+        return []
+
+def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
+    """
+    Formats a list of keywords into a valid arXiv search query string.
+    Uses OR to connect keywords and quotes for multi-word phrases.
+    Limits the number of keywords to avoid hitting URL length limits.
+    """
+    if not keywords:
+        return ""
+    
+    # Take only the top N most relevant keywords (LLM usually returns them in order)
+    limited_keywords = keywords[:max_keywords]
+    
+    formatted_keywords = []
+    for kw in limited_keywords:
+        if ' ' in kw:
+            formatted_keywords.append(f'"{kw}"')  # Add quotes for phrases
+        else:
+            formatted_keywords.append(kw)
+    
+    # Use OR to cast a wider net. The RAG pipeline will handle the filtering.
+    return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
+
+
+# --- Step 1: Define a Natural Language Query and Generate Keywords with LLM ---
+
+# natural_language_query = "I want to find papers about using machine learning potentials to accelerate molecular dynamics simulations for material science."
+
+while True:
+    natural_language_query = input("Please enter your research query (or press Enter to exit): ")
+    if not natural_language_query.strip():
+        # If the user just presses Enter, exit the script gracefully.
+        # Or, you could print a message and continue the loop.
+        print("No query provided. Exiting.")
+        exit()
+    else:
+        # If input is provided, break the loop and proceed.
+        break
+
+
+# Use the LLM to get keywords
+# You can choose a different model from OpenRouter if you wish, e.g., "google/gemini-flash-1.5"
+keywords = get_keywords_from_llm(natural_language_query, model="deepseek/deepseek-r1:free")
+
+# Format the keywords into the final arXiv query string
+QUERY = format_arxiv_query(keywords)
+
+if not QUERY:
+    raise SystemExit("[ERROR] Could not generate a valid query from the LLM. Exiting.")
+
+print(f"[INFO] Generated arXiv Query: {QUERY}")
+
+
+# The `make_interest_queries` function is now used for the RAG retrieval step later on.
+# We can make it use our LLM-generated keywords.
+def make_interest_queries(keywords_list):
+    # The function now simply returns the list of keywords generated by the LLM.
+    # You could add more complex logic here if needed.
+    return keywords_list
+
+
+
+# --- Step 2: Use the arxiv library to search and filter results by date ---
+tz_london = tz.gettz("Europe/London") # arXiv uses UTC but we want to filter by London time
+now_local = datetime.now(tz_london) # current time in London
+days = 100 # look back this many days
+start_date = (now_local.date() - timedelta(days=days-1))  # inclusive
+start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london)) # start of day
+end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london)) # end of day
+
+# Whether to use the 'updated' timestamp instead of 'published' for filtering.
+# 'updated' reflects the latest version, which may be more relevant for recent changes.
 USE_UPDATED = False
 
-client = arxiv.Client(page_size=100, delay_seconds=3)  # 分页+限速
+client = arxiv.Client(page_size=100, delay_seconds=7)  # might need to increase delay_seconds if you get HTTP 429
 search = arxiv.Search(
     query=QUERY,
-    sort_by=arxiv.SortCriterion.SubmittedDate,  # ✅ 注意是 SortCriterion
+    sort_by=arxiv.SortCriterion.SubmittedDate,  # it is SortCriterion
     sort_order=arxiv.SortOrder.Descending
 )
 
@@ -42,15 +152,25 @@ def in_window(dt_utc):
     return start_dt <= dt_local <= end_dt
 
 results = []
-for r in client.results(search):
-    ts = r.updated if USE_UPDATED else r.published
-    if in_window(ts):
-        results.append(r)
-    else:
-        # 提交时间按降序；一旦早于窗口起点就可以停止
-        ts_local = ts.astimezone(tz_london)
-        if ts_local < start_dt:
-            break
+# --- MODIFICATION START ---
+# Wrap the result fetching in a try...except block to handle the library's pagination bug.
+try:
+    for r in client.results(search):
+        ts = r.updated if USE_UPDATED else r.published
+        if in_window(ts):
+            results.append(r)
+        else:
+            # 提交时间按降序；一旦早于窗口起点就可以停止
+            ts_local = ts.astimezone(tz_london)
+            if ts_local < start_dt:
+                print("[INFO] Reached end of date window. Stopping search.")
+                break
+except arxiv.UnexpectedEmptyPageError:
+    # This error occurs when the total number of results is an exact multiple of the page_size.
+    # It's safe to ignore it and proceed with the results we have.
+    print("[INFO] Caught UnexpectedEmptyPageError. This is expected if total results are a multiple of page size. Continuing.")
+# --- MODIFICATION END ---
+
 
 print(f"Found {len(results)} results between {start_dt.date()} and {end_dt.date()} (Europe/London).")
 for i, r in enumerate(results, 1):
@@ -323,7 +443,7 @@ def retrieve_recent_interest(
     return out_hits
 
 # Step 6) 友好打印（文档级）
-def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
+def pretty_print_docs(hits, max_chars=300):
     seen = set()
     for h in hits:
         did = h["doc_id"]
@@ -343,45 +463,9 @@ def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
         print(f"    PDF   : {m.get('pdf_url','')}")
         print(f"    Snip  : {snip}\n")
 
-    """
-    打印文档级摘要；若提供 save_npz_path，则将“arXiv ID -> 该文档对应的 out_hits（chunks）”
-    保存为 .npz 文件，便于后续快速载入与复用。
-    .npz 内容（按排名顺序对齐）：
-      - 'arxiv_ids' : shape (N,)            # 每个文档的 arXiv ID
-      - 'chunk_texts' : shape (N,) object  # 若 include_text=True，则保存每个chunk的文本
-    备注：由于 'chunk_ids' / 'chunk_texts' 是变长列表，保存为 dtype=object 的数组；
-         读取时需要 np.load(..., allow_pickle=True)。
-    """
-    # 先按照 hits 中出现的顺序将 chunk 聚合到“文档(arXiv ID)”维度
-    doc_order = []           # 记录文档出现顺序（用于对齐保存）
-    doc2chunks = {}          # {arxiv_id: [{'chunk_id':..., 'text':...}, ...]}
-       
-    for h in hits:
-        aid = h["metadata"].get("arxiv_id") or h["doc_id"]  # 两者等价，这里偏向使用 arxiv_id
-        if aid not in doc2chunks:
-            doc2chunks[aid] = []
-            doc_order.append(aid)
-        doc2chunks[aid].append({
-            "chunk_id": h["chunk_id"],
-            "text": h["text"],
-        })
-    
-    # 若指定保存路径，则写入 .npz
-    if save_npz_path:
-        arxiv_ids = np.array(doc_order, dtype=object)
-        chunk_ids = np.array([[c["chunk_id"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-        save_kwargs = {
-            "arxiv_ids": arxiv_ids,
-            "chunk_ids": chunk_ids,
-        }
-        chunk_texts = np.array([[c["text"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-        save_kwargs["chunk_texts"] = chunk_texts
-    
-        np.savez(save_npz_path, **save_kwargs)
-        print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
-        
 # === 用法示例 ===
-interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
+# interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
+interest_queries = make_interest_queries(keywords)
 hits = retrieve_recent_interest(
     interest_queries,
     faiss_per_query=80,
@@ -389,40 +473,8 @@ hits = retrieve_recent_interest(
     per_doc_chunks=1,   # 每篇1段，便于LLM摘要
     alpha_recency=0.35  # 越大越偏新
 )
-pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
+pretty_print_docs(hits)
 
-
-# def load_hits_from_npz(npz_path: str):
-#     data = np.load(npz_path, allow_pickle=True)
-#     arxiv_ids = data["arxiv_ids"]                # (N,)
-#     chunk_ids_lists = data["chunk_ids"]          # (N,) object -> list[str]
-#     chunk_texts_lists = data.get("chunk_texts")  # (N,) object -> list[str] or None
-
-#     hits = []
-#     for i, aid in enumerate(arxiv_ids):
-#         aid = str(aid)
-#         cids = list(chunk_ids_lists[i])
-#         if chunk_texts_lists is None:
-#             # 没有文本，只能先返回“占位”hits（见方式 B 回灌做法）
-#             for cid in cids:
-#                 hits.append({
-#                     "text": None,                # 无文本
-#                     "doc_id": aid,
-#                     "chunk_id": cid,
-#                 })
-#         else:
-#             texts = list(chunk_texts_lists[i])
-#             # 与 cids 一一对应
-#             for cid, t in zip(cids, texts):
-#                 hits.append({
-#                     "text": t,
-#                     "doc_id": aid,
-#                     "chunk_id": cid,
-#                 })
-#     return hits
-
-
-# test = load_hits_from_npz("arxiv_out_hits.npz")
 
 
 #⑦ 组包
