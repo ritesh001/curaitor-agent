@@ -1,6 +1,11 @@
 .venv
 .env
+
+# Python cache files
 */__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .DS_Store
 papers/
 data/agent_papers/
