@@ -15,6 +15,8 @@ dependencies = [
     "langchain-ollama==0.3.8",
     "langchain-openai==0.3.33",
     "litellm>=1.77.1",
+    "mcp>=1.14.0",
+    "npx>=0.1.6",
     "numpy==2.3.3",
     "pdfminer==20191125",
     "pypdf==6.0.0",
