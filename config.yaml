@@ -1,34 +1,59 @@
-sources:
-  - name: arxiv
-    start_urls:
-      - https://arxiv.org/list/physics/new
-    max_items: 5  # Limit to 5 articles
-  # - name: pubmed
-  #   start_urls:
-  #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
+# sources:
+#   - name: arxiv
+#     start_urls:
+#       - https://arxiv.org/list/physics/new
+#     max_items: 5  # Limit to 5 articles
+#   # - name: pubmed
+#   #   start_urls:
+#   #     - https://pubmed.ncbi.nlm.nih.gov/?term=machine+learning
 
-extraction:
-  schema:
-    - title
-    - authors
-    - abstract
-    - key_results
-    - methods
+# extraction:
+#   schema:
+#     - title
+#     - authors
+#     - abstract
+#     - key_results
+#     - methods
+
+input:
+  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. Report any ionic conductivity values found in the studies. I do not want to include any data related to solid-state electrolytes or electrode materials."
+  - max_days: 10
+  - max_keywords: 5
+
+source:
+  - pdf_path: ../data/pdfs
+  - chunk_path: ../data/chunks
 
 llm:
+  ## OpenAI
   - provider: openai
   # - model: "openai/gpt-4"
-  - model: "openai/gpt-4o-mini"
+  - model: "gpt-4o-mini"
+
+  ## Gemini
+  # - model: "gemini-2.5-flash"   # or "gemini-2.5-pro"; API key must be set in environment variable GOOGLE_API_KEY (current quota exceeded)
+
+  ## Ollama
+  # - provider: ollama
+  # - model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
+  
+  ## openrouter
   # - provider: openrouter
-  # - model: "deepseek/deepseek-r1"
   # - model: "deepseek/deepseek-r1-0528:free"
   # - model: "moonshotai/kimi-k2:free"
-  # model: "gemini-2.5-flash"   # or "gemini-2.5-pro"
-  # provider: ollama
-  # model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
+  # - model: "google/gemini-2.0-flash-exp:free"
+  
   - temperature: 0.2
   - chunk_size: 1000
 
+rag:
+  - top_k: 5
+  - score_threshold: 0.1
+  - per_doc_chunks: 2
+  - embedding_model: "nomic-ai/nomic-embed-text-v1.5"
+  - chunk_size: 1000
+  - overlap: 100
+
 output:
-  format: json
-  path: data/output.json
+  - format: json
+  - path: ../data/output.json
