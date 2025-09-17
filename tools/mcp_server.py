@@ -23,39 +23,6 @@ NotificationRequest = Notifications.NotificationRequest
 PAPER_DIR = "data/agent_papers"
 
 mcp = FastMCP("paper_search")
-@mcp.tool()
-def send_notification(
-    notification_types: List[str] | str,
-    message: str,
-    email: str = None,
-    phone: str = None,
-    slack_user: str = None,
-    wechat_user: str = None
-) -> Dict[str, Any]:
-    """
-    Send a notification using supported channels (email, whatsapp, wechat, slack).
-    Args:
-        notification_types: Channel(s) to use (str or list)
-        message: Message to send
-        email: Email address (if needed)
-        phone: Phone number (if needed)
-        slack_user: Slack user ID (if needed)
-        wechat_user: WeChat user ID (if needed)
-    Returns:
-        Dict with status per channel
-    """
-    req = NotificationRequest(
-        notification_types=notification_types,
-        message=message,
-        email=email,
-        phone=phone,
-        slack_user=slack_user,
-        wechat_user=wechat_user
-    )
-    # Run the dispatcher (async)
-    import asyncio
-    result = asyncio.run(NotificationDispatcher.dispatch(req))
-    return result
 
 @mcp.tool()
 def search_papers(topic: str, max_results: int = 5) -> List[str]:
@@ -144,6 +111,39 @@ def extract_info(paper_id: str) -> str:
     
     return f"There's no saved information related to paper {paper_id}."
 
+@mcp.tool()
+def send_notification(
+    notification_types: List[str] | str,
+    message: str,
+    email: str = None,
+    phone: str = None,
+    slack_user: str = None,
+    wechat_user: str = None
+) -> Dict[str, Any]:
+    """
+    Send a notification using supported channels (email, whatsapp, wechat, slack).
+    Args:
+        notification_types: Channel(s) to use (str or list)
+        message: Message to send
+        email: Email address (if needed)
+        phone: Phone number (if needed)
+        slack_user: Slack user ID (if needed)
+        wechat_user: WeChat user ID (if needed)
+    Returns:
+        Dict with status per channel
+    """
+    req = NotificationRequest(
+        notification_types=notification_types,
+        message=message,
+        email=email,
+        phone=phone,
+        slack_user=slack_user,
+        wechat_user=wechat_user
+    )
+    # Run the dispatcher (async)
+    import asyncio
+    result = asyncio.run(NotificationDispatcher.dispatch(req))
+    return result
 
 
 if __name__ == "__main__":
