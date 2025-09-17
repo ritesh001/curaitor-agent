@@ -1,6 +1,4 @@
 # agent file based on Google ADK with MCP tool integration
-# Nanta, Shichuan
-# Sep 2025
 
 import os
 import datetime
@@ -45,12 +43,18 @@ mcp_toolset = MCPToolset(
             command="uv",
             args=["run", "tools/mcp_server.py"],
             env=os.environ.copy(),
-        ),
-        # server for sending messages
-        # server schedule tracker 
-    ),
-    # optional: only expose specific tools
-    # tool_filter=["my_tool_a", "my_tool_b"],
+        )
+    )
+)
+
+mcp_toolset2 = MCPToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="uv",
+            args=["run", "tools/server_test_scheduler.py"],
+            env=os.environ.copy(),
+        )
+    )
 )
 
 
@@ -63,5 +67,5 @@ root_agent = Agent(
     instruction=(
         "You are an intelligent assistant capable of using external tools via MCP."
     ),
-    tools=[mcp_toolset],
+    tools=[mcp_toolset, mcp_toolset2],
 )
