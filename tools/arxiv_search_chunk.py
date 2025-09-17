@@ -948,6 +948,7 @@ hits = retrieve_recent_interest(
 context = format_context(hits)
 final_answer = answer_query_with_context(natural_language_query, context, model=LLM_MODEL)
 print("\n[ANSWER]\n" + final_answer + "\n")
+save_embed_path = config['output'][2]['npz_path']
 pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_answer, question=natural_language_query)
 
 # def load_hits_from_npz(npz_path: str):

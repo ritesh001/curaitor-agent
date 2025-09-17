@@ -57,3 +57,4 @@ rag:
 output:
   - format: json
   - path: ../data/output.json
+  - npz_path: ../data/embeddings.npz
