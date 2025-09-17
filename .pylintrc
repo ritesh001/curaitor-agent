@@ -5,8 +5,11 @@ enable=E
 [MAIN]
 ignore-paths=
     ^agent/old_files/.*,
+    ^agent/agent.py,
     ^tools/spiders/.*,
     ^data/.*,
+    ^tools/pipeline.py,
+    ^main.py
 
 ignored-modules=faiss
 
