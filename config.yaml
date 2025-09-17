@@ -44,6 +44,7 @@ llm:
   # - model: "google/gemini-2.0-flash-exp:free"
   
   - temperature: 0.2
+  - chunk_size: 1000
 
 rag:
   - top_k: 5
