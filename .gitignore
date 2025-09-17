@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 *.env
+.pylintrc
 
 # IDE
 .vscode/
