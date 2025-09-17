@@ -49,7 +49,7 @@ def _normalize_model_for_provider(p: str, m: str | None) -> str | None:
     return m
 
 LLM_MODEL = _normalize_model_for_provider(provider, raw_model)
-# Reasonable fallbacks if model omitted+if not LLM_MODEL:
+# Reasonable fallbacks if model omitted
 if not LLM_MODEL:
     LLM_MODEL = {
         "openai": "gpt-4o-mini",
