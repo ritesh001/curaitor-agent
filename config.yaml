@@ -16,8 +16,9 @@
 #     - methods
 
 input:
-  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. I do not want to include any studies related to solid-state electrolytes or electrode materials. Extract all data on ionic conductivity, viscosity, and temperature dependence of liquid electrolytes, including any additives used to enhance performance."
+  - query: "I am interested in studies reporting liquid electrolyte properties such as ionic conductivity for applications in lithium metal batteries. Report any ionic conductivity values found in the studies. I do not want to include any data related to solid-state electrolytes or electrode materials."
   - max_days: 10
+  - max_keywords: 5
 
 source:
   - pdf_path: ../data/pdfs
@@ -26,8 +27,8 @@ source:
 llm:
   ## OpenAI
   - provider: openai
-  - model: "openai/gpt-4"
-  - model: "openai/gpt-4"
+  # - model: "openai/gpt-4"
+  - model: "gpt-4o-mini"
 
   ## Gemini
   # - model: "gemini-2.5-flash"   # or "gemini-2.5-pro"; API key must be set in environment variable GOOGLE_API_KEY (current quota exceeded)
