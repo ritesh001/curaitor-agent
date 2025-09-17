@@ -10,7 +10,6 @@ from sentence_transformers import CrossEncoder
 import numpy as np
 import faiss
 from collections import defaultdict
-from datetime import datetime
 import time as time_module  # for retry sleeps; avoid clashing with datetime.time
 from dateutil import tz
 import numpy as np
