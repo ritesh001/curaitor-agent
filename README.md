@@ -3,7 +3,7 @@ AI agent for scientific data extraction
 Part of Schmidt OxRSE workshop Sep 11-20, 2025
 
 ## Team members
-
+Shichuan Sun
 
 
 # Installation
