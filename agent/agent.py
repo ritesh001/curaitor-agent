@@ -1,3 +1,7 @@
+# agent file based on Google ADK with MCP tool integration
+# Nanta, Shichuan
+# Sep 2025
+
 import os
 import datetime
 from zoneinfo import ZoneInfo
@@ -36,11 +40,14 @@ else:
 # MCP toolset
 mcp_toolset = MCPToolset(
     connection_params=StdioConnectionParams(
+        # test/ mock-up functions
         server_params=StdioServerParameters(
             command="uv",
             args=["run", "tools/mcp_server.py"],
             env=os.environ.copy(),
         ),
+        # server for sending messages
+        # server schedule tracker 
     ),
     # optional: only expose specific tools
     # tool_filter=["my_tool_a", "my_tool_b"],

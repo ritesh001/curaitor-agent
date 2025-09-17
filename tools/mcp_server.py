@@ -1,3 +1,8 @@
+
+# This is a sample MCP server that provides tools to search for papers on arXiv
+# and extract information about specific papers. It uses the `arxiv` library to
+# Nanta, Shichuan
+# Sep 2025
 import arxiv
 import json
 import os
