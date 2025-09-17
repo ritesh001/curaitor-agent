@@ -27,6 +27,7 @@ from content_parsing import extract_pdf_components, texts_to_plaintext
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 # print(config['llm'][1]['model'])
 provider = config['llm'][0]['provider']
+raw_model = config['llm'][1]['model']
 
 if provider == 'openrouter':
     api_key = os.getenv("OPENROUTER_API_KEY")
@@ -36,6 +37,30 @@ elif provider == "google":
     api_key = os.getenv("GOOGLE_API_KEY")
 else:
     raise ValueError(f"Unsupported LLM provider: {provider}")
+if not api_key:
+    raise ValueError(f"Missing API key for provider '{provider}'. Set the appropriate env var.")
+
+def _normalize_model_for_provider(p: str, m: str | None) -> str | None:
+    if not m:
+        return None
+    m = m.strip()
+    # For direct providers, drop OpenRouter-style prefixes/suffixes
+    if p in ("openai", "google"):
+        if "/" in m:
+            m = m.split("/")[-1]  # e.g., "openai/gpt-4o-mini" -> "gpt-4o-mini"
+        if ":" in m:
+            m = m.split(":")[0]   # e.g., "...:free" -> base model
+    return m
+
+LLM_MODEL = _normalize_model_for_provider(provider, raw_model)
+# Reasonable fallbacks if model omitted+if not LLM_MODEL:
+if not LLM_MODEL:
+    LLM_MODEL = {
+        "openai": "gpt-4o-mini",
+        "google": "gemini-1.5-flash",
+        "openrouter": "google/gemini-2.0-flash-exp:free",
+    }.get(provider, None)
+print(f"[INFO] Provider: {provider} | Model: {LLM_MODEL}")
 
 # def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
 def get_keywords_from_llm(natural_language_query: str, model: str = None) -> list[str]:
@@ -205,17 +230,17 @@ def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: in
     """
     if not keywords:
         return ""
-    
+
     # Take only the top N most relevant keywords (LLM usually returns them in order)
     limited_keywords = keywords[:max_keywords]
-    
+
     formatted_keywords = []
     for kw in limited_keywords:
         if ' ' in kw:
             formatted_keywords.append(f'"{kw}"')  # Add quotes for phrases
         else:
             formatted_keywords.append(kw)
-    
+
     # Use OR to cast a wider net. The RAG pipeline will handle the filtering.
     return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
 
@@ -234,13 +259,14 @@ def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: in
 #         # If input is provided, break the loop and proceed.
 #         break
 try:
-    natural_language_query = config['input'][0]['query']
+    # natural_language_query = config['input'][0]['query']
+    natural_language_query = 'search_query: ' + config['input'][0]['query'] ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
 except Exception as e:
     raise SystemExit("[ERROR] Could not read 'query' from config.yaml. Exiting.")
 
 # Use the LLM to get keywords
-llm_model = config['llm'][1]['model']
-keywords = get_keywords_from_llm(natural_language_query, model=llm_model)
+# llm_model = config['llm'][1]['model']
+keywords = get_keywords_from_llm(natural_language_query, model=LLM_MODEL)
 
 # Format the keywords into the final arXiv query string
 QUERY = format_arxiv_query(keywords)
@@ -311,7 +337,6 @@ for r in client.results(search):
     if in_window(ts):
         results.append(r)
     else:
-        # 提交时间按降序；一旦早于窗口起点就可以停止
         ts_local = ts.astimezone(tz_london)
         if ts_local < start_dt:
             break
@@ -322,7 +347,7 @@ for i, r in enumerate(results, 1):
     when_local = (r.updated if USE_UPDATED else r.published).astimezone(tz_london).strftime("%Y-%m-%d %H:%M")
     pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
     cats = ",".join(r.categories)
-    abstract = " ".join(r.summary.split())  # 去掉多余换行/空白
+    abstract = " ".join(r.summary.split()) 
     
     print(f"[{i}] {r.title}\n"
           f"    Authors: {authors}\n"
@@ -401,6 +426,7 @@ for r in results:
             "published": (r.published or r.updated).isoformat() if (r.published or r.updated) else None,
             "authors": [a.name for a in r.authors],
             "categories": list(r.categories),
+            "title": r.title,
         }
     })
 
@@ -463,18 +489,17 @@ reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # 轻量高性�
 # --- Step 6b: Multi-query + doc-level rerank + recency boost ---
 
 '''
-faiss_per_query：召回越多越不漏，但重排更慢；80–200 较常见。
+faiss_per_query
 
-final_docs：最终要让 LLM看的论文数量。8–15 比较易读。
+final_docs
 
-alpha_recency：偏新近性的程度；0.3–0.5 常用。
+alpha_recency
 
-half_life_days：领域更新快就取小些（如 45–60 天），保守些就 90 天。
+half_life_days
 
-per_doc_chunks：若希望 LLM抓到更多细节，可设为 2，在每篇里再取相邻一个段落。
+per_doc_chunks
 '''
 
-# Step 6) 单次查询的粗排召回（FAISS）+ 交叉编码器重排
 def _retrieve_one(query, faiss_k=80):
     qv = emb.encode([query], normalize_embeddings=True)
     D, I = index.search(np.asarray(qv, dtype="float32"), faiss_k)
@@ -485,7 +510,6 @@ def _retrieve_one(query, faiss_k=80):
     scores = reranker.predict(pairs)  # 越大越相关
     return list(zip(cands, scores))
 
-# Step 6) 以“文档”为单位聚合：每个 doc 取其最高相关的 chunk 得分
 def _aggregate_by_doc(paired_list):
     best_by_doc = {}  # doc_id -> (chunk, score)
     for ch, s in paired_list:
@@ -494,7 +518,6 @@ def _aggregate_by_doc(paired_list):
             best_by_doc[did] = (ch, s)
     return best_by_doc  # dict
 
-# Step 6) 计算新近性分数（半衰期：60天，可调）
 def _recency_score(iso_datetime: str, half_life_days=60, tz_str="Europe/London"):
     if not iso_datetime:
         return 0.0
@@ -503,7 +526,7 @@ def _recency_score(iso_datetime: str, half_life_days=60, tz_str="Europe/London")
     except Exception:
         return 0.0
     now = datetime.now(tz.gettz(tz_str))
-    # 若 dt 无时区，按本地时区处理
+    
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=tz.gettz(tz_str))
     days = (now - dt).total_seconds() / 86400.0
@@ -511,7 +534,182 @@ def _recency_score(iso_datetime: str, half_life_days=60, tz_str="Europe/London")
         days = 0
     return 0.5 ** (days / half_life_days)  # 今天=1，60天≈0.5，120天≈0.25
 
-# Step 6) 融合多查询：RRF + 新近性加权（alpha 可调）
+### processing by LLM
+
+def answer_query_with_context(question: str, context: str, model: str | None = None) -> str:
+    """
+    Ask the selected LLM to answer using the retrieved arXiv context.
+    Reuses the same `provider` + `api_key` as above.
+    """
+    sys_instructions = (
+        "You are a concise research assistant. Answer using ONLY the provided arXiv context. "
+        "Cite arXiv IDs in brackets like [arXiv:XXXX.XXXXX]. If the context is insufficient, say so briefly."
+    )
+    user_msg = f"Question:\n{question}\n\nContext:\n{context}\n\nAnswer in 5-8 sentences."
+
+    max_retries, backoff_base = 5, 1.6
+    def _sleep(attempt: int, retry_after: str | None):
+        wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff_base ** attempt
+        time_module.sleep(min(wait, 30))
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            if provider == "openrouter":
+                url = "https://openrouter.ai/api/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "http://localhost",
+                    "X-Title": "curaitor-agent",
+                }
+                payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": sys_instructions},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "temperature": 0,
+                }
+                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+
+            elif provider == "openai":
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "model": model or "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": sys_instructions},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "temperature": 0,
+                }
+                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+
+            elif provider == "google":
+                # Gemini: put instructions + question + context into one prompt
+                g_model = model or "gemini-1.5-flash"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent"
+                params = {"key": api_key}
+                headers = {"Content-Type": "application/json"}
+                prompt = f"{sys_instructions}\n\n{user_msg}"
+                payload = {
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0},
+                }
+                resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                parts = resp.json()["candidates"][0]["content"]["parts"]
+                return " ".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+
+            else:
+                return "[ERROR] Unsupported provider."
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                _sleep(attempt, e.response.headers.get("Retry-After")); continue
+            return f"[ERROR] QA request failed: {getattr(e.response,'text','')[:300]}"
+        except Exception as e:
+            if attempt < max_retries:
+                _sleep(attempt, None); continue
+            return f"[ERROR] QA request failed: {e}"
+
+# Generate a direct answer to the initial query using retrieved context
+# qa_model = LLM_MODEL 
+# answer = answer_query_with_context(natural_language_query, context, model=qa_model)
+# print("\n[ANSWER]\n" + answer + "\n")
+
+def summarize_docs(docs, model: str | None = None) -> str:
+    """
+    Summarize a list of documents (chunks) into a concise overview using the selected LLM.
+    """
+    sys_instructions = (
+        "You are an expert academic researcher. Summarize the key points from the provided arXiv document excerpts. "
+        "Write a concise summary in 5-8 sentences."
+    )
+    combined_texts = "\n\n---\n\n".join(
+        f"[arXiv:{d['metadata'].get('arxiv_id','')}]\n{d['text']}" for d in docs
+    )
+    user_msg = f"Document Excerpts:\n{combined_texts}\n\nSummary:"
+
+    max_retries, backoff_base = 5, 1.6
+    def _sleep(attempt: int, retry_after: str | None):
+        wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff_base ** attempt
+        time_module.sleep(min(wait, 30))
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            if provider == "openrouter":
+                url = "https://openrouter.ai/api/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "http://localhost",
+                    "X-Title": "curaitor-agent",
+                }
+                payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": sys_instructions},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "temperature": 0,
+                }
+                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+
+            elif provider == "openai":
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "model": model or "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": sys_instructions},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "temperature": 0,
+                }
+                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+            elif provider == "google":
+                # Gemini: put instructions + question + context into one prompt
+                g_model = model or "gemini-1.5-flash"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent"
+                params = {"key": api_key}
+                headers = {"Content-Type": "application/json"}
+                prompt = f"{sys_instructions}\n\n{user_msg}"
+                payload = {
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0},
+                }
+                resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                if resp.status_code == 429 and attempt < max_retries:
+                    _sleep(attempt, resp.headers.get("Retry-After")); continue
+                resp.raise_for_status()
+                parts = resp.json()["candidates"][0]["content"]["parts"]
+                return " ".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+            else:
+                return "[ERROR] Unsupported provider."
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                _sleep(attempt, e.response.headers.get("Retry-After")); continue
+            return f"[ERROR] Summarization request failed: {getattr(e.response,'text','')[:300]}"
+### finish
+
 def retrieve_recent_interest(
     queries,
     faiss_per_query=80,
@@ -519,7 +717,10 @@ def retrieve_recent_interest(
     per_doc_chunks=1,
     alpha_recency=0.35,  # 0~1，越大越偏向新文章
 ):
-    # 多查询召回+重排
+    # Allow a single query string or a list of queries
+    if isinstance(queries, str):
+        queries = [queries]
+
     all_pairs = []
     for q in queries:
         all_pairs.extend(_retrieve_one(q, faiss_k=faiss_per_query))
@@ -527,10 +728,8 @@ def retrieve_recent_interest(
     if not all_pairs:
         return []
 
-    # 文档粒度取最佳相关 score
     best_by_doc = _aggregate_by_doc(all_pairs)
 
-    # 归一化相关度
     raw_scores = np.array([s for (_, s) in best_by_doc.values()], dtype="float32")
     if raw_scores.size == 0:
         return []
@@ -538,7 +737,6 @@ def retrieve_recent_interest(
     def _norm(x):
         return 0.0 if s_max == s_min else (x - s_min) / (s_max - s_min)
 
-    # 计算新近性 & 融合分数
     scored_docs = []
     for did, (ch, rel_s) in best_by_doc.items():
         m = ch["metadata"]
@@ -546,100 +744,211 @@ def retrieve_recent_interest(
         comb = (1 - alpha_recency) * _norm(rel_s) + alpha_recency * rec_s
         scored_docs.append((did, ch, rel_s, rec_s, comb))
 
-    # 依综合分排序，保留 top 文档
     scored_docs.sort(key=lambda t: t[4], reverse=True)
     top_docs = scored_docs[:final_docs]
 
-    # 为每个文档再挑选代表性 chunk（默认就取刚才的最佳chunk；也可以扩展取同文档下相邻chunk）
     out_hits = []
     for did, best_chunk, rel_s, rec_s, comb in top_docs:
-        out_hits.append(best_chunk)
-        # 如需每文档多片段，可在此处基于 chunk_id 邻近再取1-2段
+        # out_hits.append(best_chunk)
+        # annotate best chunk with doc-level scores
+        best_annot = dict(best_chunk)
+        best_annot["rel_score"] = float(rel_s)
+        best_annot["recency_score"] = float(rec_s)
+        best_annot["combined_score"] = float(comb)
+        out_hits.append(best_annot)
+
         if per_doc_chunks > 1:
-            # 示例：同文档内找到与 best_chunk 相邻的 chunk
+
             base_id = best_chunk["chunk_id"]
             try:
                 base_idx = int(base_id.split("::chunk")[-1])
                 same_doc = [c for c in chunks if c["doc_id"] == did]
-                # 简单找相邻的几段
                 neighbors = [c for c in same_doc if abs(int(c["chunk_id"].split("::chunk")[-1]) - base_idx) <= 2]
-                # 去掉重复
                 neighbors = [c for c in neighbors if c["chunk_id"] != base_id]
-                # 最多补足 per_doc_chunks-1 个
-                out_hits.extend(neighbors[:max(0, per_doc_chunks - 1)])
+                # out_hits.extend(neighbors[:max(0, per_doc_chunks - 1)])
+                # carry scores on neighbors too (optional, copy best's scores)
+                for nb in neighbors[:max(0, per_doc_chunks - 1)]:
+                    nb_annot = dict(nb)
+                    nb_annot["rel_score"] = float(rel_s)
+                    nb_annot["recency_score"] = float(rec_s)
+                    nb_annot["combined_score"] = float(comb)
+                    out_hits.append(nb_annot)
             except Exception:
                 pass
 
     return out_hits
 
-# Step 6) 友好打印（文档级）
-def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
-    seen = set()
+# --- Step 7: pack context and get a direct answer ---
+def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
+    enc = tiktoken.get_encoding(model_enc)
+    parts, used = [], 0
     for h in hits:
-        did = h["doc_id"]
-        if did in seen:
-            continue
-        seen.add(did)
-        m = h["metadata"]
-        title = m.get("title", "") if "title" in m else ""
+        src = f"[Source: arXiv:{h['metadata']['arxiv_id']}]"
+        block = f"{src}\n{h['text'].strip()}\n"
+        tok = enc.encode(block)
+        if used + len(tok) > max_ctx_tokens:
+            break
+        parts.append(block)
+        used += len(tok)
+    return "\n---\n".join(parts)
+
+# def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
+    # seen = set()
+    # for h in hits:
+    #     did = h["doc_id"]
+    #     if did in seen:
+    #         continue
+    #     seen.add(did)
+    #     m = h["metadata"]
+    #     title = m.get("title", "") if "title" in m else ""
+    #     authors = ", ".join(m.get("authors", [])) or "Unknown"
+    #     when = m.get("published", "") or ""
+    #     print(h)
+    #     # snip = h["text"].strip().replace("\n", " ")
+    #     summary = summarize_docs([h], model=llm_model)
+    #     snip = summary.replace("\n", " ")
+    #     if len(snip) > max_chars: snip = snip[:max_chars] + " ..."
+    #     print(f"[{len(seen)}] arXiv:{m.get('arxiv_id','')}")
+    #     print(f"    Title : {title}")
+    #     print(f"    Authors: {authors}")
+    #     print(f"    Date  : {when}")
+    #     print(f"    PDF   : {m.get('pdf_url','')}")
+    #     print(f"    Summary  : {snip}\n")
+
+    # doc_order = []
+    # doc2chunks = {}
+
+    # for h in hits:
+    #     aid = h["metadata"].get("arxiv_id") or h["doc_id"]
+    #     if aid not in doc2chunks:
+    #         doc2chunks[aid] = []
+    #         doc_order.append(aid)
+    #     doc2chunks[aid].append({
+    #         "chunk_id": h["chunk_id"],
+    #         "text": h["text"],
+    #     })
+
+    # if save_npz_path:
+    #     arxiv_ids = np.array(doc_order, dtype=object)
+    #     chunk_ids = np.array([[c["chunk_id"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
+    #     save_kwargs = {
+    #         "arxiv_ids": arxiv_ids,
+    #         "chunk_ids": chunk_ids,
+    #     }
+    #     chunk_texts = np.array([[c["text"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
+    #     save_kwargs["chunk_texts"] = chunk_texts
+
+    #     np.savez(save_npz_path, **save_kwargs)
+    #     print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
+
+def pretty_print_docs(hits, max_chars=300, save_npz_path=None, final_answer: str | None = None, question: str | None = None):
+    # Group hits by document (best chunk is first for each doc)
+    doc_order: list[str] = []
+    doc2chunks: dict[str, list[dict]] = {}
+    best_per_doc: dict[str, dict] = {}
+    meta_per_doc: dict[str, dict] = {}
+    for h in hits:
+        aid = h["metadata"].get("arxiv_id") or h["doc_id"]
+        if aid not in doc2chunks:
+            doc2chunks[aid] = []
+            doc_order.append(aid)
+            best_per_doc[aid] = h  # first seen is the best chunk we appended
+            meta_per_doc[aid] = h["metadata"]
+        doc2chunks[aid].append(h)
+
+    # Print and collect per-doc summaries
+    doc_summaries: list[str] = []
+    doc_answers: list[str] = []
+
+    def _format_doc_context(chunks_for_doc, max_ctx_tokens=1800, model_enc="cl100k_base") -> str:
+        enc = tiktoken.get_encoding(model_enc)
+        parts, used = [], 0
+        for it in chunks_for_doc:
+            src = f"[Source: arXiv:{it['metadata']['arxiv_id']}]"
+            block = f"{src}\n{it['text'].strip()}\n"
+            tok = enc.encode(block)
+            if used + len(tok) > max_ctx_tokens:
+                break
+            parts.append(block)
+            used += len(tok)
+        return "\n---\n".join(parts)
+
+    for idx, aid in enumerate(doc_order, 1):
+        m = meta_per_doc[aid]
+        title = m.get("title", "") or ""
         authors = ", ".join(m.get("authors", [])) or "Unknown"
         when = m.get("published", "") or ""
-        snip = h["text"].strip().replace("\n", " ")
-        if len(snip) > max_chars: snip = snip[:max_chars] + " ..."
-        print(f"[{len(seen)}] arXiv:{m.get('arxiv_id','')}")
+        # summarize using all selected chunks for this doc
+        summary = summarize_docs(doc2chunks[aid], model=LLM_MODEL) or ""
+        snip = (summary.replace("\n", " "))
+        if len(snip) > max_chars:
+            snip = snip[:max_chars] + " ..."
+        print(f"[{idx}] arXiv:{aid}")
         print(f"    Title : {title}")
         print(f"    Authors: {authors}")
         print(f"    Date  : {when}")
         print(f"    PDF   : {m.get('pdf_url','')}")
-        print(f"    Snip  : {snip}\n")
+        print(f"    Summary: {snip}\n")
+        doc_summaries.append(summary)
 
-    """
-    打印文档级摘要；若提供 save_npz_path，则将“arXiv ID -> 该文档对应的 out_hits（chunks）”
-    保存为 .npz 文件，便于后续快速载入与复用。
-    .npz 内容（按排名顺序对齐）：
-      - 'arxiv_ids' : shape (N,)            # 每个文档的 arXiv ID
-      - 'chunk_texts' : shape (N,) object  # 若 include_text=True，则保存每个chunk的文本
-    备注：由于 'chunk_ids' / 'chunk_texts' 是变长列表，保存为 dtype=object 的数组；
-         读取时需要 np.load(..., allow_pickle=True)。
-    """
-    # 先按照 hits 中出现的顺序将 chunk 聚合到“文档(arXiv ID)”维度
-    doc_order = []           # 记录文档出现顺序（用于对齐保存）
-    doc2chunks = {}          # {arxiv_id: [{'chunk_id':..., 'text':...}, ...]}
-       
-    for h in hits:
-        aid = h["metadata"].get("arxiv_id") or h["doc_id"]  # 两者等价，这里偏向使用 arxiv_id
-        if aid not in doc2chunks:
-            doc2chunks[aid] = []
-            doc_order.append(aid)
-        doc2chunks[aid].append({
-            "chunk_id": h["chunk_id"],
-            "text": h["text"],
-        })
-    
-    # 若指定保存路径，则写入 .npz
+        # optional per-document answer
+        if question:
+            ctx = _format_doc_context(doc2chunks[aid])
+            ans = answer_query_with_context(question, ctx, model=LLM_MODEL)
+            doc_answers.append(ans)
+        else:
+            doc_answers.append("")
+
+    # Save NPZ with extra info
     if save_npz_path:
         arxiv_ids = np.array(doc_order, dtype=object)
         chunk_ids = np.array([[c["chunk_id"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-        save_kwargs = {
-            "arxiv_ids": arxiv_ids,
-            "chunk_ids": chunk_ids,
-        }
         chunk_texts = np.array([[c["text"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-        save_kwargs["chunk_texts"] = chunk_texts
-    
-        np.savez(save_npz_path, **save_kwargs)
+        # doc-level scores from the best chunk
+        doc_rel_scores = np.array(
+            [float(best_per_doc[aid].get("rel_score", np.nan)) for aid in doc_order],
+            dtype="float32",
+        )
+        doc_recency_scores = np.array(
+            [float(best_per_doc[aid].get("recency_score", np.nan)) for aid in doc_order],
+            dtype="float32",
+        )
+        doc_combined_scores = np.array(
+            [float(best_per_doc[aid].get("combined_score", np.nan)) for aid in doc_order],
+            dtype="float32",
+        )
+        doc_summaries_arr = np.array(doc_summaries, dtype=object)
+        qa_answer_arr = np.array(final_answer or "", dtype=object)  # scalar object array
+        doc_answers_arr = np.array(doc_answers, dtype=object)       # one answer per doc
+
+        np.savez(
+            save_npz_path,
+            arxiv_ids=arxiv_ids,
+            chunk_ids=chunk_ids,
+            chunk_texts=chunk_texts,
+            doc_rel_scores=doc_rel_scores,
+            doc_recency_scores=doc_recency_scores,
+            doc_combined_scores=doc_combined_scores,
+            doc_summaries=doc_summaries_arr,
+            qa_answer=qa_answer_arr,
+            doc_answers=doc_answers_arr,
+        )
         print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
-        
-# === 用法示例 ===
+
 # interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
 hits = retrieve_recent_interest(
     natural_language_query,
     faiss_per_query=80,
     final_docs=12,
-    per_doc_chunks=1,   # 每篇1段，便于LLM摘要
-    alpha_recency=0.35  # 越大越偏新
+    per_doc_chunks=1,
+    alpha_recency=0.35
 )
-pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
+
+# pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
+context = format_context(hits)
+final_answer = answer_query_with_context(natural_language_query, context, model=LLM_MODEL)
+print("\n[ANSWER]\n" + final_answer + "\n")
+pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_answer, question=natural_language_query)
 
 # def load_hits_from_npz(npz_path: str):
 #     data = np.load(npz_path, allow_pickle=True)
@@ -672,20 +981,20 @@ pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
 
 
 # test = load_hits_from_npz("arxiv_out_hits.npz")
-
 # --- Step 7: pack context ---
 
-def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
-    enc = tiktoken.get_encoding(model_enc)
-    parts, used = [], 0
-    for h in hits:
-        src = f"[Source: arXiv:{h['metadata']['arxiv_id']}]"
-        block = f"{src}\n{h['text'].strip()}\n"
-        tok = enc.encode(block)
-        if used + len(tok) > max_ctx_tokens:
-            break
-        parts.append(block)
-        used += len(tok)
-    return "\n---\n".join(parts)
+# def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
+#     enc = tiktoken.get_encoding(model_enc)
+#     parts, used = [], 0
+#     for h in hits:
+#         src = f"[Source: arXiv:{h['metadata']['arxiv_id']}]"
+#         block = f"{src}\n{h['text'].strip()}\n"
+#         tok = enc.encode(block)
+#         if used + len(tok) > max_ctx_tokens:
+#             break
+#         parts.append(block)
+#         used += len(tok)
+#     return "\n---\n".join(parts)
 
-context = format_context(hits)
+# context = format_context(hits)
+# print(context)
