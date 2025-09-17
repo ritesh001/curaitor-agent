@@ -12,7 +12,7 @@ Part of Schmidt OxRSE workshop Sep 11-20, 2025
 
 - Clone the repo, then `cd` into the repo
 - Initialize the project
-`uv add -r requirements.txt`
+`uv add -r requirements.txt` or `uv sync`
 - Run agent web interface
 `uv run adk web`
 
@@ -35,4 +35,5 @@ For inspecting if you have a good connection with the MCP server and testing too
     - Verify npm version:
     `npm -v` # Should print "10.9.3".
 - Run MCP inspector `npx @modelcontextprotocol/inspector uv run tools/mcp_server.py`
+- In the MCP inspector, click connect and test tools
 
