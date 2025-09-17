@@ -1,5 +1,5 @@
-# from crawler.pipeline import run_crawler
-# from agent.planner import AgentPipeline
+from crawler.pipeline import run_crawler
+from agent.planner import AgentPipeline
 
 if __name__ == '__main__':
     # Step 1: Crawl
