@@ -1,0 +1,6 @@
+[MESSAGES CONTROL]
+disable=R,C,W,F
+enable=E
+
+[REPORTS]
+fail-under=10
