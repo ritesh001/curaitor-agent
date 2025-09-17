@@ -65,9 +65,9 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
 
     Args:
         natural_language_query: The user's research question or topic.
-+        model: The model name. For provider='openrouter', pass OpenRouter model id.
-+               For provider='openai' pass OpenAI model id (e.g., 'gpt-4o-mini').
-+               For provider='google' pass Gemini model id (e.g., 'gemini-1.5-flash' or 'gemini-2.0-flash-exp').
+        model: The model name. For provider='openrouter', pass OpenRouter model id.
+               For provider='openai' pass OpenAI model id (e.g., 'gpt-4o-mini').
+               For provider='google' pass Gemini model id (e.g., 'gemini-1.5-flash' or 'gemini-2.0-flash-exp').
 
     Returns:
         A list of keywords and phrases suitable for an arXiv search.
