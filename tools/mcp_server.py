@@ -1,9 +1,17 @@
-
-# This is a sample MCP server that provides tools to search for papers on arXiv
+This is a sample MCP server that provides tools to search for papers on arXiv
 # and extract information about specific papers. It uses the `arxiv` library to
 # Nanta, Shichuan
 # Sep 2025
 import arxiv
+import asyncio
+import importlib.util
+import sys
+notif_spec = importlib.util.spec_from_file_location("Notifications", "./Notifications.Py")
+Notifications = importlib.util.module_from_spec(notif_spec)
+sys.modules["Notifications"] = Notifications
+notif_spec.loader.exec_module(Notifications)
+NotificationRequest = Notifications.NotificationRequest
+NotificationDispatcher = Notifications.NotificationDispatcher
 import json
 import os
 import requests
@@ -23,6 +31,32 @@ from arxiv_search_chunk import get_keyworks_from_llm
 PAPER_DIR = "data/agent_papers"
 
 mcp = FastMCP("paper_search")
+# ...existing code...
+
+@mcp.tool()
+def send_notification(notification_types: list[str] | str, message: str, email: str = None, phone: str = None, slack_user: str = None, wechat_user: str = None) -> dict:
+    """
+    Send a notification to the user via the selected channel(s).
+    Args:
+        notification_types: List or string of channels ('email', 'whatsapp', 'wechat', 'slack', or 'auto').
+        message: The message to send.
+        email: Email address for email notifications.
+        phone: Phone number for WhatsApp notifications.
+        slack_user: Slack user ID for Slack notifications.
+        wechat_user: WeChat user ID for WeChat notifications.
+    Returns:
+        Dictionary with status for each channel.
+    """
+    req = NotificationRequest(
+        notification_types=notification_types,
+        message=message,
+        email=email,
+        phone=phone,
+        slack_user=slack_user,
+        wechat_user=wechat_user
+    )
+    # Run the async dispatcher in sync context
+    return asyncio.run(NotificationDispatcher.dispatch(req))
 
 @mcp.tool()
 def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
