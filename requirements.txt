@@ -1,45 +1,22 @@
-## requirements.txt - consolidated for this project
-
-## Core runtime (required)
-scrapy>=2.8.0                # web crawling / spiders
-pdfminer.six>=20221105       # PDF extraction used by tools/pdf_parser.py
-python-dotenv>=1.0.0         # load .env in agent/llm_agent.py
-PyYAML>=6.0                  # config.yaml parsing
-requests>=2.31.0             # HTTP requests (tools/arxiv_search_chunk.py)
-arxiv>=1.4.0                 # arXiv client (tools/arxiv_search_chunk.py)
-
-## Langchain & LLM provider support (install only providers you use)
-langchain>=0.0.279
-google-generativeai>=0.4.0   # Google Generative AI client (if using Google)
-openai>=0.27.0               # OpenAI/OpenRouter support (if using OpenAI)
-
-# Provider integration helpers (optional; install per-provider if needed)
-langchain-google-genai>=0.0.7
-langchain-ollama>=0.1.0
-langchain-openai>=0.1.0
-
-## Tools / extraction / embedding (optional, used by tools/)
-pypdf>=3.10.0                # PDF parsing in tools/arxiv_search_chunk.py
-tiktoken>=0.4.0              # tokenization used in chunking
-sentence-transformers>=2.2.2 # embeddings & CrossEncoder
-numpy>=1.24.0
-
-## Vector search / ML runtimes (platform-specific; optional)
-# faiss wheels are platform-specific. On Linux you can pip install faiss-cpu;
-# on macOS it's often easier to use conda-forge (see notes). We include a
-# conditional marker to avoid forcing faiss on macOS pip installs.
-faiss-cpu>=1.12.0; platform_system!='Darwin'
-
-# CrossEncoder requires transformers & torch. Install torch suitable for
-# your platform (CPU vs CUDA) before installing cross-encoder related models.
-
-## Date handling
-python-dateutil>=2.8.2
-
-## HTML parsing (optional)
-beautifulsoup4>=4.12.2
-
-pylint>=3.2
-
-
-
+arxiv==2.2.0
+crawler==0.0.2
+extractor==0.5
+faiss-cpu==1.12.0
+google-adk>=1.14.1
+langchain==0.3.27
+langchain-google-genai==2.1.10
+langchain-ollama==0.3.8
+langchain-openai==0.3.33
+litellm>=1.77.1
+mcp>=1.14.0
+npx>=0.1.6
+numpy==2.3.3
+pdfminer==20191125
+pypdf==6.0.0
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+pyyaml==6.0.2
+requests==2.32.5
+scrapy==2.13.3
+sentence-transformers==5.1.0
+tiktoken==0.11.0
