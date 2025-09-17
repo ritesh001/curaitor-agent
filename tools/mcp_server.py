@@ -120,6 +120,7 @@ def get_one_sentence_summary(text: str, model: str = "google/gemini-flash-1.5") 
         print(f"[WARN] Summarization failed: {e}")
         return "Could not generate summary."
 
+@mcp.tool()
 def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
     """
     Formats a list of keywords into a valid arXiv search query string.
@@ -200,6 +201,7 @@ search = arxiv.Search(
     sort_order=arxiv.SortOrder.Descending
 )
 
+@mcp.tool()
 def in_window(dt_utc):
     dt_local = dt_utc.astimezone(tz_london)
     return start_dt <= dt_local <= end_dt
@@ -249,9 +251,11 @@ import re, requests
 from io import BytesIO
 from pypdf import PdfReader
 
+@mcp.tool()
 def _strip_hyphenation(t: str) -> str:
     return re.sub(r"-\s*\n\s*", "", t)
 
+@mcp.tool()
 def _normalize_ws(t: str) -> str:
     t = t.replace("\r\n", "\n").replace("\r", "\n")
     t = re.sub(r"\n{3,}", "\n\n", t)  # 多个空行压成一个
@@ -259,6 +263,7 @@ def _normalize_ws(t: str) -> str:
     paras = [re.sub(r"\s{2,}", " ", p) for p in paras if p]
     return "\n\n".join(paras).strip()
 
+@mcp.tool()
 def _cut_refs(t: str) -> str:
     patt = re.compile(r"\n\s*(references|bibliography|acknowledg(e)?ments)\s*\n", re.I)
     last = None
@@ -266,6 +271,7 @@ def _cut_refs(t: str) -> str:
         last = m
     return t[:last.start()].strip() if last else t
 
+@mcp.tool()
 def extract_pdf_text(pdf_url: str) -> str:
     try:
         r = requests.get(pdf_url, timeout=60)
@@ -318,6 +324,7 @@ print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs
 import tiktoken
 enc = tiktoken.get_encoding("cl100k_base")
 
+@mcp.tool()
 def chunk_text(text: str, chunk_size=500, overlap=100):
     if not text.strip():
         return []
@@ -603,7 +610,6 @@ for i, h in enumerate(unique_docs_for_summary, 1):
 
 print("[INFO] Summarization complete.")
 # --- END NEW SECTION ---
-
 
 pretty_print_docs(hits, doc_summaries)
 save_hits_to_csv(hits, doc_summaries)
