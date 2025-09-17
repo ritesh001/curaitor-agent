@@ -19,6 +19,7 @@ dependencies = [
     "npx>=0.1.6",
     "numpy==2.3.3",
     "pdfminer==20191125",
+    "pylint>=3.3.8",
     "pypdf==6.0.0",
     "python-dateutil==2.9.0.post0",
     "python-dotenv==1.1.1",
