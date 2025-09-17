@@ -1,0 +1,64 @@
+{
+  "2309.12329v1": {
+    "title": "Mono/Multi-material Characterization Using Hyperspectral Images and Multi-Block Non-Negative Matrix Factorization",
+    "authors": [
+      "Mahdiyeh Ghaffari",
+      "Gerjen H. Tinnevelt",
+      "Marcel C. P. van Eijk",
+      "Stanislav Podchezertsev",
+      "Geert J. Postma",
+      "Jeroen J. Jansen"
+    ],
+    "summary": "Plastic sorting is a very essential step in waste management, especially due\nto the presence of multilayer plastics. These monomaterial and multimaterial\nplastics are widely employed to enhance the functional properties of packaging,\ncombining beneficial properties in thickness, mechanical strength, and heat\ntolerance. However, materials containing multiple polymer species need to be\npretreated before they can be recycled as monomaterials and therefore should\nnot end up in monomaterial streams. Industry 4.0 has significantly improved\nmaterials sorting of plastic packaging in speed and accuracy compared to manual\nsorting, specifically through Near Infrared Hyperspectral Imaging (NIRHSI) that\nprovides an automated, fast, and accurate material characterization, without\nsample preparation. Identification of multimaterials with HSI however requires\nnovel dedicated approaches for chemical pattern recognition. Non negative\nMatrix Factorization, NMF, is widely used for the chemical resolution of\nhyperspectral images. Chemically relevant model constraints may make it\nspecifically valuable to identify multilayer plastics through HSI.\nSpecifically, Multi Block Non Negative Matrix Factorization (MBNMF) with\ncorrespondence among different chemical species constraint may be used to\nevaluate the presence or absence of particular polymer species. To translate\nthe MBNMF model into an evidence based sorting decision, we extended the model\nwith an F test to distinguish between monomaterial and multimaterial objects.\nThe benefits of our new approach, MBNMF, were illustrated by the identification\nof several plastic waste objects.",
+    "pdf_url": "http://arxiv.org/pdf/2309.12329v1",
+    "published": "2023-08-15"
+  },
+  "2502.02359v1": {
+    "title": "Suppressing Mechanical Property Variability in Recycled Plastics via Bio-inspired Design",
+    "authors": [
+      "Dimitrios Georgiou",
+      "Danqi Sun",
+      "Xing Liu",
+      "Christos E Athanasiou"
+    ],
+    "summary": "The escalating plastic waste crisis demands global action, yet mechanical\nrecycling - currently the most prevalent strategy - remains severely\nunderutilized. Only a small fraction of the total plastic waste is recycled in\nthis manner, largely due to the significant variability in recycled plastics'\nmechanical properties. This variability stems from compositional fluctuations\nand impurities introduced throughout the materials' lifecycle and the recycling\nprocess, deterring industries with stringent product specifications from\nadopting recycled plastics on a wider scale. To overcome this challenge, we\npropose a composite structure inspired by nacre's microstructure - a natural\nmaterial known for its exceptional mechanical performance despite its inherent\nrandomness across multiple length scales. This bio-inspired design features\nstiff recycled plastic platelets (\"bricks\") within a soft polymeric matrix\n(\"mortar\"). We use a tension-shear-chain model to capture the deformation\nmechanism of the structure, and demonstrate, through a case study of commercial\nstretch wrap, that the proposed design reduces variability in effective elastic\nmodulus by 89.5% and in elongation at break by 42%, while achieving the same\nmodulus as the virgin stretch wrap material. These findings highlight the\npotential of the proposed bio-inspired design to enhance the mechanical\nperformance of recycled plastics, but also demonstrate that a universally\napplicable, chemistry-agnostic approach can substantially broaden their\napplications, paving the way for sustainable plastic waste management.",
+    "pdf_url": "http://arxiv.org/pdf/2502.02359v1",
+    "published": "2025-02-04"
+  },
+  "2410.00268v1": {
+    "title": "Operando Ultrafast Damage-free Diffraction-Enhanced X-ray Absorption Spectroscopy for Chemical Reactivity of Polymer in Solvents",
+    "authors": [
+      "Zhengxing Peng",
+      "Antoine Lain\u00e9",
+      "Ka Chon Ng",
+      "Mutian Hua",
+      "Brett A. Helms",
+      "Miquel B. Salmeron",
+      "Cheng Wang"
+    ],
+    "summary": "Chemical recycling of plastics to its constituent monomers is a promising\nsolution to develop a sustainable circular plastic economy. An in-situ X-ray\nabsorption spectra (XAS) characterization is an important way to understand the\ndeconstruction process. However, radiation damage, and long acquisition time,\nprevent such characterization for fast chemical process. Here, we present a\nnovel experimental technique, which we name Diffraction-Enhanced X-ray\nAbsorption Spectroscopy (DE-XAS), where the plastic material is supported on a\ngraphene layer covering a periodic pattern of holes in a perforated SiNx\nmembrane. The XAS is obtained by measuring the energy-dependent intensity of\nthe X-ray diffracted beams going through the plastic film over the holes in the\nSiNx membrane. Our method decreases beam damage by orders of magnitude while\nproviding good signal/noise ratio data. We demonstrate the suppression of beam\ndamage with samples of polymethyl methacrylate (PMMA) and the operando\ncharacterization of polymer deconstruction process in acid with\npolydiketoenamine (PDK). This proof-of-concept of the DE-XAS technique shows\nits great potential for studying fast chemical processes, picoseconds to\nnanoseconds, using fast CCD detectors with short readout time. We believe the\nDE-XAS technique offers opportunities for studies of chemical reactions, e.g.,\nphotoresist, and many others.",
+    "pdf_url": "http://arxiv.org/pdf/2410.00268v1",
+    "published": "2024-09-30"
+  },
+  "2012.00191v1": {
+    "title": "Open Source 3-D Filament Diameter Sensor for Recycling, Winding and Additive Manufacturing Machines",
+    "authors": [
+      "Aliaksei L. Petsiuk",
+      "Joshua M. Pearce"
+    ],
+    "summary": "To overcome the challenge of upcycling plastic waste into 3-D printing\nfilament in the distributed recycling and additive manufacturing systems, this\nstudy designs, builds, tests and validates an open source 3-D filament diameter\nsensor for recycling and winding machines. The modular system for multi-axis\noptical control of the diameter of the recycled 3-D-printer filament makes it\npossible to analyze the surface structure of the processed filament, save the\nhistory of measurements along the entire length of the spool, as well as mark\ndefective areas. The sensor is developed as an independent module and\nintegrated into a recyclebot. The diameter sensor was tested on different kinds\nof polymers (ABS, PLA) different sources of plastic (recycled 3-D prints and\nvirgin plastic waste) and different colors including clear plastic. The results\nof the diameter measurements using the camera were compared with the manual\nmeasurements, and the measurements obtained with a one-dimensional digital\nlight caliper. The results found that the developed open source filament\nsensing method allows users to obtain significantly more information in\ncomparison with basic one-dimensional light sensors and using the received data\nnot only for more accurate diameter measurements, but also for a detailed\nanalysis of the recycled filament surface. The developed method ensures greater\navailability of plastics recycling technologies for the manufacturing community\nand stimulates the growth of composite materials creation. The presented system\ncan greatly enhance the user possibilities and serve as a starting point for a\ncomplete recycling control system that will regulate motor parameters to\nachieve the desired filament diameter with acceptable deviations and even\ncontrol the extrusion rate on a printer to recover from filament\nirregularities.",
+    "pdf_url": "http://arxiv.org/pdf/2012.00191v1",
+    "published": "2020-12-01"
+  },
+  "2404.10336v1": {
+    "title": "Lifetime predictions for virgin and recycled high-density polyethylene under creep conditions",
+    "authors": [
+      "A. D. Drozdov",
+      "R. Hoj Jermiin",
+      "J. deClaville Christiansen"
+    ],
+    "summary": "Recycling has become a predominant subject in industry and science due to a\nrising concern for the environment driven by high production volume of\nplastics. Replacement of virgin polymers with their recycled analogs is not\nalways possible because recycled polymers cannot met the same property profiles\nas their virgin counterparts. To avoid deterioration of the mechanical\nproperties, it is proposed to replace a virgin polymer with a recycled polymer\nof another grade whose characteristics (measured in tensile tests) are close to\nthose of the virgin material. This approach opens a way for the use of recycled\npolymers in short-term application, but its suitability for long-term\napplications has not yet been assessed. A thorough experimental investigation\nis conducted of the mechanical response of virgin high-density polyethylene\n(HDPE) used for insulation of pipes and recycled HDPE manufactured from\npost-consumer plastic waste (their stiffness, strength and elongation to break\nadopt similar values). A model is presented in viscoelastoplasticity of\nsemicrystalline polymers. Its parameters are determined by matching\nexperimental data in short-term relaxation and creep tests. The lifetime of\nvirgin and recycled HDPE under creep conditions is evaluated by means of\nnumerical simulation. It is shown that the stress-time to failure diagrams for\nvirgin and recycled HDPE practically coincide.",
+    "pdf_url": "http://arxiv.org/pdf/2404.10336v1",
+    "published": "2024-04-16"
+  }
+}
