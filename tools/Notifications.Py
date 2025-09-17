@@ -171,3 +171,4 @@ async def notify(req: NotificationRequest):
         return {"status": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
