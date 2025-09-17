@@ -435,7 +435,11 @@ enc = tiktoken.get_encoding("cl100k_base")
 chunk_size = config['rag'][4]['chunk_size']
 overlap = config['rag'][5]['overlap']
 
-def chunk_text(text: str, chunk_size: int = chunk_size, overlap: int = overlap):
+def chunk_text(text: str, chunk_size: int = None, overlap: int = None):
+    if chunk_size is None:
+        chunk_size = globals().get("chunk_size", 512)
+    if overlap is None:
+        overlap = globals().get("overlap", 50)
     if not text.strip():
         return []
     toks = enc.encode(text)
