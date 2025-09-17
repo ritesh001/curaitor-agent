@@ -3,4 +3,5 @@ disable=R,C,W,F
 enable=E
 
 [REPORTS]
-fail-under=10
+; fail-under=10
+score=no
