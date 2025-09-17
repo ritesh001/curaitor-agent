@@ -8,6 +8,8 @@ ignore-paths=
     ^tools/spiders/.*,
     ^data/.*,
 
+ignored-modules=faiss
+
 [REPORTS]
 ; fail-under=10
 score=no
