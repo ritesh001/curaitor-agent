@@ -1,10 +1,11 @@
+.venv
 .env
 
 # Python cache files
-__pycache__/
+*/__pycache__/
 *.py[cod]
 *$py.class
 *.so
-
-# macOS
 .DS_Store
+papers/
+data/agent_papers/

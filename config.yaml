@@ -16,14 +16,18 @@ extraction:
     - methods
 
 llm:
-  # model: "openai/gpt-4"
+  - provider: openai
+  # - model: "openai/gpt-4"
+  - model: "openai/gpt-4o-mini"
+  # - provider: openrouter
+  # - model: "deepseek/deepseek-r1"
+  # - model: "deepseek/deepseek-r1-0528:free"
+  # - model: "moonshotai/kimi-k2:free"
   # model: "gemini-2.5-flash"   # or "gemini-2.5-pro"
   # provider: ollama
   # model: "deepseek-r1:14b"   # any local model tag shown by `ollama list`
-  provider: openrouter
-  model: "deepseek/deepseek-r1-0528:free"
-  temperature: 0.2
-  chunk_size: 1000
+  - temperature: 0.2
+  - chunk_size: 1000
 
 output:
   format: json
