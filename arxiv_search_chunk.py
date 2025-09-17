@@ -68,6 +68,46 @@ def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemi
         print(f"Raw response: {response.text}")
         return []
 
+def get_one_sentence_summary(text: str, model: str = "google/gemini-flash-1.5") -> str:
+    """Uses an LLM to generate a one-sentence summary of a paper's main contribution."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return "[ERROR] OPENROUTER_API_KEY not set."
+
+    prompt = f"""
+    You are an expert academic editor. Your task is to read the following text from a research paper and synthesize its core contribution into a single, concise sentence.
+
+    The summary MUST follow this structure, combining these four elements:
+    1.  **Problem:** What question or problem is the paper trying to solve?
+    2.  **Method:** What is the primary method, model, or approach used?
+    3.  **System:** What specific system, material, or example is investigated?
+    4.  **Outcome:** What is the main finding or result?
+
+    Combine these points into one fluid sentence. For example: "To address [Problem], this paper introduces [Method] to study [System], demonstrating that [Outcome]."
+
+    Do not add any preamble or explanation. Return ONLY the single summary sentence.
+
+    Text:
+    \"\"\"
+    {text}
+    \"\"\"
+
+    One-sentence summary:
+    """
+
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            data=json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}]})
+        )
+        response.raise_for_status()
+        summary = response.json()['choices'][0]['message']['content'].strip()
+        return summary
+    except Exception as e:
+        print(f"[WARN] Summarization failed: {e}")
+        return "Could not generate summary."
+
 def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
     """
     Formats a list of keywords into a valid arXiv search query string.
@@ -445,7 +485,7 @@ def retrieve_recent_interest(
     return out_hits
 
 # Step 6) 友好打印（文档级）
-def pretty_print_docs(hits, max_chars=500):
+def pretty_print_docs(hits, summaries, max_chars=500):
     seen = set()
     for h in hits:
         did = h["doc_id"]
@@ -453,6 +493,7 @@ def pretty_print_docs(hits, max_chars=500):
             continue
         seen.add(did)
         m = h["metadata"]
+        summary = summaries.get(did, "Summary not available.") # Get the summary
         title = m.get("title", "") if "title" in m else ""
         authors = ", ".join(m.get("authors", [])) or "Unknown"
         when = m.get("published", "") or ""
@@ -463,11 +504,12 @@ def pretty_print_docs(hits, max_chars=500):
         print(f"    Authors: {authors}")
         print(f"    Date  : {when}")
         print(f"    PDF   : {m.get('pdf_url','')}")
+        print(f"    Summary: {summary}") # Print the summary
         print(f"    Snip  : {snip}\n")
 
-def save_hits_to_csv(hits, filename="search_results.csv", max_chars=500):
+def save_hits_to_csv(hits, summaries, filename="search_results.csv"):
     """Saves the top unique documents from the hits to a CSV file."""
-    headers = ['arXiv_ID', 'Title', 'Authors', 'Published_Date', 'PDF_URL', 'Snippet']
+    headers = ['arXiv_ID', 'Title', 'Authors', 'Published_Date', 'PDF_URL', 'One_Sentence_Summary', 'Snippet']
     seen = set()
     
     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
@@ -481,6 +523,7 @@ def save_hits_to_csv(hits, filename="search_results.csv", max_chars=500):
             seen.add(did)
             
             m = h["metadata"]
+            summary = summaries.get(did, "Summary not available.") # Get the summary
             
             arxiv_id = m.get('arxiv_id', '')
             title = m.get("title", "")
@@ -488,15 +531,19 @@ def save_hits_to_csv(hits, filename="search_results.csv", max_chars=500):
             when = m.get("published", "") or ""
             pdf_url = m.get('pdf_url', '')
             snip = h["text"].strip().replace("\n", " ")
-            # if len(snip) > max_chars: 
-            #     snip = snip[:max_chars] + " ..."
 
-            writer.writerow([arxiv_id, title, authors, when, pdf_url, snip])
+            writer.writerow([arxiv_id, title, authors, when, pdf_url, summary, snip]) # Add summary to the row
     
     print(f"\n[INFO] Successfully saved {len(seen)} results to {filename}")
 
 
 # === 用法示例 ===
+
+# --- Configuration for Summarization ---
+# Set to True to use the full text of the paper for summarization (slower, more comprehensive).
+# Set to False to use only the most relevant text chunk (faster, more focused).
+SUMMARIZE_FULL_TEXT = False # need to be set in .yaml file
+
 # interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
 interest_queries = make_interest_queries(keywords)
 hits = retrieve_recent_interest(
@@ -506,8 +553,48 @@ hits = retrieve_recent_interest(
     per_doc_chunks=1,   # 每篇1段，便于LLM摘要
     alpha_recency=0.35  # 越大越偏新
 )
-pretty_print_docs(hits)
-save_hits_to_csv(hits) # Add this line to save the results
+
+# --- NEW: Generate one-sentence summaries for the top hits ---
+
+# Create a dictionary for quick lookup of full document text by doc_id
+docs_by_id = {doc['doc_id']: doc for doc in docs}
+
+doc_summaries = {}
+unique_docs_for_summary = []
+seen_docs = set()
+for h in hits:
+    if h['doc_id'] not in seen_docs:
+        unique_docs_for_summary.append(h)
+        seen_docs.add(h['doc_id'])
+
+summary_mode = "full text" if SUMMARIZE_FULL_TEXT else "best chunk"
+print(f"\n[INFO] Generating one-sentence summaries for {len(unique_docs_for_summary)} papers (using {summary_mode})...")
+
+for i, h in enumerate(unique_docs_for_summary, 1):
+    print(f"  > Summarizing paper {i}/{len(unique_docs_for_summary)}: {h['metadata']['title'][:50]}...")
+    
+    text_to_summarize = ""
+    if SUMMARIZE_FULL_TEXT:
+        # Use the full text from the original document
+        full_doc = docs_by_id.get(h['doc_id'])
+        if full_doc:
+            text_to_summarize = full_doc['text']
+    else:
+        # Use the text of the most relevant chunk (original behavior)
+        text_to_summarize = h['text']
+
+    if text_to_summarize:
+        summary = get_one_sentence_summary(text_to_summarize)
+        doc_summaries[h['doc_id']] = summary
+    else:
+        doc_summaries[h['doc_id']] = "Text for summarization not found."
+
+print("[INFO] Summarization complete.")
+# --- END NEW SECTION ---
+
+
+pretty_print_docs(hits, doc_summaries)
+save_hits_to_csv(hits, doc_summaries)
 
 
 #⑦ 组包
