@@ -2,6 +2,12 @@
 disable=R,C,W,F
 enable=E
 
+[MAIN]
+ignore-paths=
+    ^agent/old_files/.*,
+    ^tools/spiders/.*,
+    ^data/.*,
+
 [REPORTS]
 ; fail-under=10
 score=no
