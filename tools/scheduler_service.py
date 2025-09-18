@@ -187,9 +187,7 @@ def my_job(topic: str = "machine learning") -> str:
     """
     Wrapper to call the async job from a sync context.
     """
-
-    # asyncio.run(my_job_async())
-    asyncio.run(search_papersx(topic, 3))
+    asyncio.run(search_papersx(topic))
     return "Job executed."
 
 # ----------------------------
@@ -209,6 +207,7 @@ def schedule_daily_job(
         trigger=trigger,
         id=job_id,
         replace_existing=replace_existing,
+        kwargs={"topic": topic},  # Pass topic as a keyword argument
     )
     logging.getLogger("scheduler").info(
         "Scheduled job '%s' daily at %02d:%02d", job_id, hour, minute
@@ -219,6 +218,7 @@ def schedule_daily_job(
         "job_id": job_id,
         "hour": hour,
         "minute": minute,
+        "topic": topic,
     }
 
 def remove_job(job_id: str) -> Dict[str, Any]:
@@ -232,6 +232,10 @@ def list_jobs() -> List[Dict[str, Any]]:
     jobs_info: List[Dict[str, Any]] = []
     for j in scheduler.get_jobs():
         nrt = j.next_run_time.isoformat() if j.next_run_time else None
+        # Try to get 'topic' from job kwargs if available
+        topic = None
+        if hasattr(j, 'kwargs') and isinstance(j.kwargs, dict):
+            topic = j.kwargs.get("topic")
         jobs_info.append(
             {
                 "id": j.id,
@@ -241,6 +245,7 @@ def list_jobs() -> List[Dict[str, Any]]:
                 "coalesce": j.coalesce,
                 "max_instances": j.max_instances,
                 "misfire_grace_time": j.misfire_grace_time,
+                "topic": topic,
             }
         )
     return jobs_info

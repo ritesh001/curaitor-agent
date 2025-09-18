@@ -22,7 +22,7 @@ logging.basicConfig(
 async def add_daily_job(hour: int, minute: int, job_id: str = "daily_my_job", topic: str = "machine learning"):
     """
     Start/ensure the scheduler is running and add a daily job at HH:MM.
-    
+    Input topic for the job to search papers on.
     Non-blocking: returns immediately.
     """
 
