@@ -105,7 +105,6 @@ def get_scheduler() -> AsyncIOScheduler:
 # ----------------------------
 # Example job (async)
 # ----------------------------
-
 async def my_job_async():
     logging.getLogger("scheduler.job").info(
         "Async job executed at %s", datetime.now().isoformat(timespec="seconds")
@@ -114,6 +113,9 @@ async def my_job_async():
         f.write(f"{datetime.now().isoformat(timespec='seconds')}\n")
     
     return print(f"[{datetime.now()}] Async job executed at the scheduled time!")
+
+# async def send_whatsapp_message(message: str, to_number: str) -> None:
+#     return
 
 def my_job():
     """
