@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 *.env
+.pylintrc
 
 # IDE
 .vscode/
@@ -52,3 +53,4 @@ Thumbs.db
 .DS_Store
 papers/
 data/agent_papers/
+data/tracker/*

@@ -1,0 +1,18 @@
+[MESSAGES CONTROL]
+disable=R,C,W,F
+enable=E
+
+[MAIN]
+ignore-paths=
+    ^agent/old_files/.*,
+    ^agent/agent.py,
+    ^tools/spiders/.*,
+    ^data/.*,
+    ^tools/pipeline.py,
+    ^main.py
+
+ignored-modules=faiss
+
+[REPORTS]
+; fail-under=10
+score=no
