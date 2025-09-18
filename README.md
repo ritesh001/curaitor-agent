@@ -4,7 +4,7 @@ Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)
 
 ---
 
-## 📖 Overview  
+## Overview  
 Curaitor Agent is an **AI-powered tool** designed to extract, organize, and process **scientific data**.  
 It provides:  
 - A **web interface** for running the agent.  
@@ -12,7 +12,7 @@ It provides:
 
 ---
 
-## ⚡ Quick Start  
+## Quick Start  
 
 ```bash
 # Install uv
@@ -29,7 +29,9 @@ uv add -r requirements.txt
 # Run web interface
 uv run adk web
 
-# Dependency management
+---
+
+## Dependency management
 
 Sync when requirements.txt is updated:
 uv sync
