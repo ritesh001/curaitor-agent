@@ -18,7 +18,7 @@ import yaml, json
 from pathlib import Path
 # from dotenv import load_dotenv
 # load_dotenv()
-from content_parsing import extract_pdf_components, texts_to_plaintext
+from .content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 # print(config['llm'][1]['model'])
@@ -217,6 +217,46 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
                 _sleep(attempt, None)
                 continue
             return []
+
+def get_one_sentence_summary(text: str, model: str = "google/gemini-flash-1.5") -> str:
+    """Uses an LLM to generate a one-sentence summary of a paper's main contribution."""
+    # api_key = os.getenv("OPENROUTER_API_KEY")
+    # if not api_key:
+    #     return "[ERROR] OPENROUTER_API_KEY not set."
+
+    prompt = f"""
+    You are an expert academic editor. Your task is to read the following text from a research paper and synthesize its core contribution into a single, concise sentence.
+
+    The summary MUST follow this structure, combining these four elements:
+    1.  **Problem:** What question or problem is the paper trying to solve?
+    2.  **Method:** What is the primary method, model, or approach used?
+    3.  **System:** What specific system, material, or example is investigated?
+    4.  **Outcome:** What is the main finding or result?
+
+    Combine these points into one fluid sentence. For example: "To address [Problem], this paper introduces [Method] to study [System], demonstrating that [Outcome]."
+
+    Do not add any preamble or explanation. Return ONLY the single summary sentence.
+
+    Text:
+    \"\"\"
+    {text}
+    \"\"\"
+
+    One-sentence summary:
+    """
+
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            data=json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}]})
+        )
+        response.raise_for_status()
+        summary = response.json()['choices'][0]['message']['content'].strip()
+        return summary
+    except Exception as e:
+        print(f"[WARN] Summarization failed: {e}")
+        return "Could not generate summary."
 
 def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: int = 3) -> str:
     """
@@ -632,8 +672,16 @@ def summarize_docs(docs, model: str | None = None) -> str:
     Summarize a list of documents (chunks) into a concise overview using the selected LLM.
     """
     sys_instructions = (
-        "You are an expert academic researcher. Summarize the key points from the provided arXiv document excerpts. "
-        "Write a concise summary in 5-8 sentences."
+        # "You are an expert academic researcher. Summarize the key points from the provided arXiv document excerpts. "
+        # "Write a concise summary in 5-8 sentences."
+        "You are an expert academic editor. Your task is to read the following text from a research paper and synthesize its core contribution into a single, concise sentence."
+        "The summary MUST follow this structure, combining these four elements:"
+        "1.  **Problem:** What question or problem is the paper trying to solve?"
+        "2.  **Method:** What is the primary method, model, or approach used?"
+        "3.  **System:** What specific system, material, or example is investigated?"
+        "4.  **Outcome:** What is the main finding or result?"
+        "Combine these points into one fluid sentence. For example: 'To address [Problem], this paper introduces [Method] to study [System], demonstrating that [Outcome].'"
+        "Do not add any preamble or explanation. Return ONLY the single summary sentence."
     )
     combined_texts = "\n\n---\n\n".join(
         f"[arXiv:{d['metadata'].get('arxiv_id','')}]\n{d['text']}" for d in docs
@@ -879,7 +927,8 @@ def pretty_print_docs(hits, max_chars=300, save_npz_path=None, final_answer: str
         authors = ", ".join(m.get("authors", [])) or "Unknown"
         when = m.get("published", "") or ""
         # summarize using all selected chunks for this doc
-        summary = summarize_docs(doc2chunks[aid], model=LLM_MODEL) or ""
+        summary = summarize_docs(doc2chunks[aid], model=LLM_MODEL) or "" ## old function
+        # summary = get_one_sentence_summary(doc2chunks[aid])  # try to make it shorter
         snip = (summary.replace("\n", " "))
         if len(snip) > max_chars:
             snip = snip[:max_chars] + " ..."
