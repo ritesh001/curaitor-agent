@@ -69,6 +69,7 @@ def get_scheduler() -> AsyncIOScheduler:
     """
     global _scheduler
     if _scheduler is not None and _scheduler.running:
+        print("Scheduler already running.")
         return _scheduler
 
     _configure_logging()
