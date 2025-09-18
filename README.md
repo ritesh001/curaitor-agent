@@ -1,38 +1,92 @@
-# curaitor-agent
-AI agent for scientific data extraction
-Part of Schmidt OxRSE workshop Sep 11-20, 2025
+# Curaitor Agent  
+**AI agent for scientific data extraction**  
+Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
-# Installation
-- Install uv 
-`curl -LsSf https://astral.sh/uv/install.sh | sh`
+---
 
-- Clone the repo, then `cd` into the repo
-- Initialize the project
-`uv init` and
-`uv add -r requirements.txt`
-Or
-`uv init --from pyproject.toml`
-- Run agent web interface
-`uv run adk web`
+## Overview  
+Curaitor Agent is an **AI-powered tool** designed to extract, organize, and process **scientific data**.  
+It provides:  
+- A **web interface** for running the agent.  
+- **Model Context Protocol (MCP) inspector** integration to test tools and server connections.  
 
+---
 
-If you update the requirements.txt, then do `uv sync` Or if add a package directly to uv do `uv add package-name` then also update the requirements.txt. 
+## Quick Start  
 
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# MCP Inspector tool
-For inspecting if you have a good connection with the MCP server and testing tools in the server files.
+# Clone repo
+git clone <your-repo-url>
+cd curaitor-agent
 
-- Requirements: nnvm, node.js>=18. Ref (see: https://nodejs.org/en/download)
-    - Download and install nvm:
-    `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`
-    - in lieu of restarting the shell
-    `\. "$HOME/.nvm/nvm.sh"`
-    - Download and install Node.js:
-    `nvm install 22`
-    - Verify the Node.js version:
-    `node -v` # Should print "v22.19.0"
-    - Verify npm version:
-    `npm -v` # Should print "10.9.3".
-- Run MCP inspector `npx @modelcontextprotocol/inspector uv run tools/mcp_server.py`
-- In the MCP inspector, click connect and test tools
+# Initialize project
+uv init
+uv add -r requirements.txt
 
+# Run web interface
+uv run adk web
+```
+---
+
+## Dependency Management  
+
+- Sync when `requirements.txt` is updated:  
+  ```bash
+  uv sync
+  ```
+
+- Add a new package:  
+  ```bash
+  uv add package-name
+  ```
+  *(Don’t forget to update `requirements.txt`!)*
+
+---
+
+## MCP Inspector Tool  
+
+The **MCP Inspector** helps verify your MCP server connection and test available tools.  
+
+### Requirements  
+- [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager)  
+- **Node.js ≥ 18** (v22 recommended)  
+
+### Setup  
+
+1. Install **nvm**:  
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+   \. "$HOME/.nvm/nvm.sh"
+   ```
+
+2. Install **Node.js v22**:  
+   ```bash
+   nvm install 22
+   ```
+
+3. Verify versions:  
+   ```bash
+   node -v   # v22.19.0
+   npm -v    # 10.9.3
+   ```
+
+4. Run the MCP Inspector:  
+   ```bash
+   npx @modelcontextprotocol/inspector uv run tools/mcp_server.py
+   ```
+
+5. In the MCP Inspector UI, click **Connect** → test tools.
+
+---
+
+## Notes  
+- Ensure you’re using **Node.js v22.x** when running the inspector.  
+- Always keep your environment in sync with `requirements.txt` for reproducibility.  
+
+---
+
+## License  
+This project is licensed under the **MIT License**.  
