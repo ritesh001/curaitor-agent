@@ -24,7 +24,7 @@ jobs:
 
     # 同步依赖（需要 pyproject.toml / uv.lock）
     - name: Install packages
-      run: uv sync
+      run: uv sync --python 3.13
 
     - name: Run pylint
       run: uv run pylint $(git ls-files '*.py')
