@@ -1,3 +1,4 @@
+
 # This is a sample MCP server that provides tools to search for papers on arXiv
 # and extract information about specific papers. It uses the `arxiv` library to
 # Nanta, Shichuan
@@ -5,17 +6,9 @@
 import arxiv
 import json
 import os
-from typing import List, Dict, Any
+from typing import List
 from mcp.server.fastmcp import FastMCP
-
-# --- Notification imports ---
-import importlib.util
-notif_path = os.path.join(os.path.dirname(__file__), 'Notifications.Py')
-spec = importlib.util.spec_from_file_location('Notifications', notif_path)
-Notifications = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(Notifications)
-NotificationDispatcher = Notifications.NotificationDispatcher
-NotificationRequest = Notifications.NotificationRequest
+from Notifications import send_literature_review_report
 
 # from pathlib import Path
 # import argparse
@@ -83,6 +76,7 @@ def search_papers(topic: str, max_results: int = 5) -> List[str]:
     
     return paper_ids
 
+
 @mcp.tool()
 def extract_info(paper_id: str) -> str:
     """
@@ -111,39 +105,41 @@ def extract_info(paper_id: str) -> str:
     
     return f"There's no saved information related to paper {paper_id}."
 
+
+# === MCP TOOL: Send Literature Review Notification ===
 @mcp.tool()
-def send_notification(
-    notification_types: List[str] | str,
-    message: str,
-    email: str = None,
-    phone: str = None,
-    slack_user: str = None,
-    wechat_user: str = None
-) -> Dict[str, Any]:
+def send_literature_review_notification(email: str, topic: str, max_results: int = 5) -> str:
     """
-    Send a notification using supported channels (email, whatsapp, wechat, slack).
+    Search for papers and send a literature review notification to the specified email.
     Args:
-        notification_types: Channel(s) to use (str or list)
-        message: Message to send
-        email: Email address (if needed)
-        phone: Phone number (if needed)
-        slack_user: Slack user ID (if needed)
-        wechat_user: WeChat user ID (if needed)
+        email: Recipient's Gmail address.
+        topic: The topic to search for
+        max_results: Maximum number of results to retrieve (default: 5)
     Returns:
-        Dict with status per channel
+        Success or error message
     """
-    req = NotificationRequest(
-        notification_types=notification_types,
-        message=message,
-        email=email,
-        phone=phone,
-        slack_user=slack_user,
-        wechat_user=wechat_user
+    client = arxiv.Client()
+    search = arxiv.Search(
+        query=topic,
+        max_results=max_results,
+        sort_by=arxiv.SortCriterion.Relevance
     )
-    # Run the dispatcher (async)
-    import asyncio
-    result = asyncio.run(NotificationDispatcher.dispatch(req))
-    return result
+    papers = list(client.results(search))
+    results = []
+    for paper in papers:
+        results.append({
+            'title': paper.title,
+            'authors': ', '.join([author.name for author in paper.authors]),
+            'published': str(paper.published.date()),
+            'pdf_url': paper.pdf_url,
+            'snippet': paper.summary[:200]
+        })
+    summary = f"Found {len(results)} papers for topic '{topic}'."
+    try:
+        send_literature_review_report(email, summary, results)
+        return f"Notification sent to {email} for topic '{topic}'."
+    except Exception as e:
+        return f"Failed to send notification: {e}"
 
 
 if __name__ == "__main__":
