@@ -17,15 +17,16 @@ config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 provider = config["llm"][0]["provider"]
 use_model = config["llm"][1]["model"]
 
-print(f"openrouter/{use_model}")
+print(f"{use_model}, {provider}")
 
 if provider == "openai":
+    print("Using OpenAI model")
     model = LiteLlm(
         model=use_model,
         api_key=os.getenv("OPENAI_API_KEY"),
         api_base="https://api.openai.com/v1"
     )
-if provider == "openrouter":
+elif provider == "openrouter":
     model = LiteLlm(
         model=f"openrouter/{use_model}",
         api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -41,7 +42,7 @@ mcp_toolset = MCPToolset(
         # test/ mock-up functions
         server_params=StdioServerParameters(
             command="uv",
-            args=["run", "tools/mcp_server.py"],
+            args=["run", "agent/mcp_server.py"],
             env=os.environ.copy(),
         )
     )
