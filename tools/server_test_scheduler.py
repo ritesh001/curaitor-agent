@@ -19,13 +19,14 @@ logging.basicConfig(
 )
 
 @mcp.tool()
-async def add_daily_job(hour: int, minute: int, job_id: str = "daily_my_job"):
+async def add_daily_job(hour: int, minute: int, job_id: str = "daily_my_job", topic: str = "machine learning"):
     """
     Start/ensure the scheduler is running and add a daily job at HH:MM.
+    
     Non-blocking: returns immediately.
     """
 
-    return schedule_daily_job(hour, minute, job_id=job_id)
+    return schedule_daily_job(hour, minute, job_id=job_id, topic=topic)
 
 @mcp.tool()
 async def delete_job(job_id: str):
