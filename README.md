@@ -1,6 +1,6 @@
 # curaitor-agent  
 **AI agent for scientific data extraction**  
-Part of **[Schmidt OxRSE Workshop](https://www.oxrse.ox.ac.uk/)** (Sep 11–20, 2025)  
+Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
 ---
 
@@ -29,30 +29,40 @@ uv add -r requirements.txt
 # Run web interface
 uv run adk web
 
+# Dependency management
+
+Sync when requirements.txt is updated:
+uv sync
+
+Add a new package:
+uv add package-name
+
+MCP Inspector Tool
+
+The MCP Inspector helps verify your MCP server connection and test available tools.
+
+Requirements
+
+nvm
+ (Node Version Manager)
+
+Node.js ≥ 18 (v22 recommended)
+
+Setup
+
+Install nvm:
 
 
 
-# curaitor-agent
-AI agent for scientific data extraction
-Part of Schmidt OxRSE workshop Sep 11-20, 2025
-
-## Team members
-Shichuan Sun
 
 
-# Installation
-- Install uv 
-`curl -LsSf https://astral.sh/uv/install.sh | sh`
 
-- Clone the repo, then `cd` into the repo
-- Initialize the project
-`uv add -r requirements.txt` or `uv sync`
-- Run agent web interface
-`uv run adk web`
+
+
+
 
 
 If you update the requirements.txt, then do `uv sync` Or if add a package directly to uv do `uv add package-name` then also update the requirements.txt. 
-
 
 # MCP Inspector tool
 For inspecting if you have a good connection with the MCP server and testing tools in the server files.
