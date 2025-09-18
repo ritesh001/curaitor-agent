@@ -26,10 +26,6 @@ jobs:
     - name: Install packages
       run: uv sync
 
-
-    - name: Install packages
-      run: uv sync
-
     - name: Run pylint
       run: uv run pylint $(git ls-files '*.py')
 
