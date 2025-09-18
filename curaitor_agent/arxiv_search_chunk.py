@@ -18,7 +18,7 @@ import yaml, json
 from pathlib import Path
 # from dotenv import load_dotenv
 # load_dotenv()
-from content_parsing import extract_pdf_components, texts_to_plaintext
+from .content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 # print(config['llm'][1]['model'])

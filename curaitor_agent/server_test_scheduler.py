@@ -3,7 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from mcp.server.fastmcp import FastMCP
 
-from scheduler_service import (
+from .scheduler_service import (
     schedule_daily_job,
     remove_job,
     list_jobs,
