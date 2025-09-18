@@ -20,11 +20,11 @@ jobs:
 
     # 安装指定 Python（可改 3.12/3.11 等）
     - name: Install Python
-      run: uv python install 3.13
+      run: uv python install 3.12
 
     # 同步依赖（需要 pyproject.toml / uv.lock）
     - name: Install packages
-      run: uv sync --python 3.13
+      run: uv sync --python 3.12
 
     - name: Run pylint
       run: uv run pylint $(git ls-files '*.py')
