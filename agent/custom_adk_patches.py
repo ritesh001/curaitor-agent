@@ -15,7 +15,8 @@ from datetime import timedelta
 from typing import Any, Dict, List, Optional, TextIO, Union
 
 from google.adk.tools.mcp_tool.mcp_session_manager import MCPSessionManager, StdioServerParameters
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, SseServerParams, StreamableHTTPServerParams, ToolPredicate
+# from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, SseServerParams, StreamableHTTPServerParams, ToolPredicate
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, ToolPredicate
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
@@ -36,7 +37,8 @@ class CustomMcpSessionManager(MCPSessionManager):
 
     def __init__(
         self,
-        connection_params: Union[StdioServerParameters, SseServerParams, StreamableHTTPServerParams],
+        # connection_params: Union[StdioServerParameters, SseServerParams, StreamableHTTPServerParams],
+        connection_params: Union[StdioServerParameters],
         errlog: TextIO = sys.stderr,
     ):
         """Initialize the custom session manager with all required attributes."""
@@ -64,23 +66,23 @@ class CustomMcpSessionManager(MCPSessionManager):
                 client = stdio_client(
                     server=self._connection_params, errlog=self._errlog
                 )
-            elif isinstance(self._connection_params, SseServerParams):
-                client = sse_client(
-                    url=self._connection_params.url,
-                    headers=self._connection_params.headers,
-                    timeout=self._connection_params.timeout,
-                    sse_read_timeout=self._connection_params.sse_read_timeout,
-                )
-            elif isinstance(self._connection_params, StreamableHTTPServerParams):
-                client = streamablehttp_client(
-                    url=self._connection_params.url,
-                    headers=self._connection_params.headers,
-                    timeout=timedelta(seconds=self._connection_params.timeout),
-                    sse_read_timeout=timedelta(
-                        seconds=self._connection_params.sse_read_timeout
-                    ),
-                    terminate_on_close=self._connection_params.terminate_on_close,
-                )
+            # elif isinstance(self._connection_params, SseServerParams):
+            #     client = sse_client(
+            #         url=self._connection_params.url,
+            #         headers=self._connection_params.headers,
+            #         timeout=self._connection_params.timeout,
+            #         sse_read_timeout=self._connection_params.sse_read_timeout,
+            #     )
+            # elif isinstance(self._connection_params, StreamableHTTPServerParams):
+            #     client = streamablehttp_client(
+            #         url=self._connection_params.url,
+            #         headers=self._connection_params.headers,
+            #         timeout=timedelta(seconds=self._connection_params.timeout),
+            #         sse_read_timeout=timedelta(
+            #             seconds=self._connection_params.sse_read_timeout
+            #         ),
+            #         terminate_on_close=self._connection_params.terminate_on_close,
+            #     )
             else:
                 raise ValueError(
                     'Unable to initialize connection. Connection should be'
@@ -141,7 +143,8 @@ class CustomMCPToolset(MCPToolset):
 
     def __init__(
         self,
-        connection_params: Union[StdioServerParameters, SseServerParams, StreamableHTTPServerParams],
+        # connection_params: Union[StdioServerParameters, SseServerParams, StreamableHTTPServerParams],
+        connection_params: Union[StdioServerParameters],
         tool_filter: Union[ToolPredicate, List[str], None] = None,
         errlog: TextIO = sys.stderr,
     ):

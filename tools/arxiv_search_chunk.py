@@ -999,3 +999,6 @@ pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_a
 
 # context = format_context(hits)
 # print(context)
+
+if __name__ == "__main__":
+    pass
