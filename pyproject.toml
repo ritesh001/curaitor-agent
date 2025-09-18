@@ -34,4 +34,8 @@ dependencies = [
     "sentence-transformers==5.1.0",
     "tiktoken==0.11.0",
     "typing>=3.10.0.0",
+    "pandas>=2.3.0",
+    "docling>=2.45.0",
+    "docling-core>=2.45.0",
+    "pytest>=8.4.0",
 ]
