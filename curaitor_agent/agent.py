@@ -8,8 +8,8 @@ from zoneinfo import ZoneInfo
 from google.adk.agents import Agent
 # from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
-# from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
-from custom_adk_patches import CustomMCPToolset as MCPToolset
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+# from custom_adk_patches import CustomMCPToolset as MCPToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 import yaml
@@ -109,7 +109,7 @@ mcp_toolset = MCPToolset(
         # test/ mock-up functions
         server_params=StdioServerParameters(
             command="uv",
-            args=["run", "tools/mcp_server.py"],
+            args=["run", "curaitor_agent/mcp_server.py"],
             env=os.environ.copy(),
         ),
         # server for sending messages
@@ -118,8 +118,8 @@ mcp_toolset = MCPToolset(
     # optional: only expose specific tools
     # tool_filter=["my_tool_a", "my_tool_b"],
     # increase timeouts to tolerate slower startup/responses
-    startup_timeout_seconds=30,   # handshake/init
-    request_timeout_seconds=60,   # individual request (initialize, list_tools, etc.)
+    # startup_timeout_seconds=30,   # handshake/init
+    # request_timeout_seconds=60,   # individual request (initialize, list_tools, etc.)
 )
 
 data_initializer_mcp = MCPToolset(
@@ -127,7 +127,7 @@ data_initializer_mcp = MCPToolset(
         # test/ mock-up functions
         server_params=StdioServerParameters(
             command="uv",
-            args=["run", "tools/curaitor_mcp_server.py"],
+            args=["run", "curaitor_agent/curaitor_mcp_server.py"],
             env=os.environ.copy(),
         ),
         # server for sending messages
@@ -136,8 +136,8 @@ data_initializer_mcp = MCPToolset(
     # optional: only expose specific tools
     # tool_filter=["my_tool_a", "my_tool_b"],
         # increase timeouts to tolerate slower startup/responses
-    startup_timeout_seconds=30,   # handshake/init
-    request_timeout_seconds=60,   # individual request (initialize, list_tools, etc.)
+    # startup_timeout_seconds=30,   # handshake/init
+    # request_timeout_seconds=60,   # individual request (initialize, list_tools, etc.)
 )
 
 root_agent = Agent(
