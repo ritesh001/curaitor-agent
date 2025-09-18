@@ -6,13 +6,29 @@ jobs:
     steps:
 
 
-    - uses: actions/checkout@v3
-    - run: pip install -r requirements.txt
+    - name: Check out repo
+      uses: actions/checkout@v5
+
+    # 安装 uv，并启用缓存
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          uv.lock
+
+    # 安装指定 Python（可改 3.12/3.11 等）
+    - name: Install Python
+      run: uv python install 3.12
+
+    # 同步依赖（需要 pyproject.toml / uv.lock）
+    - name: Install packages
+      run: uv sync --python 3.12
 
     - name: Run pylint
-      run: |
-        pylint $(git ls-files '*.py')
+      run: uv run pylint $(git ls-files '*.py')
 
 
     - name:  Test all files
-      run: python -m unittest discover -s tests -p "test_*.py"
+      run: uv run pytest
