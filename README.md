@@ -1,4 +1,4 @@
-# curaitor-agent  
+# Curaitor Agent  
 **AI agent for scientific data extraction**  
 Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
@@ -28,58 +28,65 @@ uv add -r requirements.txt
 
 # Run web interface
 uv run adk web
+```
+---
+
+## Dependency Management  
+
+- Sync when `requirements.txt` is updated:  
+  ```bash
+  uv sync
+  ```
+
+- Add a new package:  
+  ```bash
+  uv add package-name
+  ```
+  *(Don’t forget to update `requirements.txt`!)*
 
 ---
 
-## Dependency management
+## MCP Inspector Tool  
 
-Sync when requirements.txt is updated:
-uv sync
+The **MCP Inspector** helps verify your MCP server connection and test available tools.  
 
-Add a new package:
-uv add package-name
+### Requirements  
+- [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager)  
+- **Node.js ≥ 18** (v22 recommended)  
 
-MCP Inspector Tool
+### Setup  
 
-The MCP Inspector helps verify your MCP server connection and test available tools.
+1. Install **nvm**:  
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+   \. "$HOME/.nvm/nvm.sh"
+   ```
 
-Requirements
+2. Install **Node.js v22**:  
+   ```bash
+   nvm install 22
+   ```
 
-nvm
- (Node Version Manager)
+3. Verify versions:  
+   ```bash
+   node -v   # v22.19.0
+   npm -v    # 10.9.3
+   ```
 
-Node.js ≥ 18 (v22 recommended)
+4. Run the MCP Inspector:  
+   ```bash
+   npx @modelcontextprotocol/inspector uv run tools/mcp_server.py
+   ```
 
-Setup
+5. In the MCP Inspector UI, click **Connect** → test tools.
 
-Install nvm:
+---
 
+## Notes  
+- Ensure you’re using **Node.js v22.x** when running the inspector.  
+- Always keep your environment in sync with `requirements.txt` for reproducibility.  
 
+---
 
-
-
-
-
-
-
-
-
-If you update the requirements.txt, then do `uv sync` Or if add a package directly to uv do `uv add package-name` then also update the requirements.txt. 
-
-# MCP Inspector tool
-For inspecting if you have a good connection with the MCP server and testing tools in the server files.
-
-- Requirements: nnvm, node.js>=18. Ref (see: https://nodejs.org/en/download)
-    - Download and install nvm:
-    `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`
-    - in lieu of restarting the shell
-    `\. "$HOME/.nvm/nvm.sh"`
-    - Download and install Node.js:
-    `nvm install 22`
-    - Verify the Node.js version:
-    `node -v` # Should print "v22.19.0"
-    - Verify npm version:
-    `npm -v` # Should print "10.9.3".
-- Run MCP inspector `npx @modelcontextprotocol/inspector uv run tools/mcp_server.py`
-- In the MCP inspector, click connect and test tools
-
+## License  
+This project is licensed under the **MIT License**.  
