@@ -5,8 +5,8 @@ import tiktoken
 import re, requests
 from io import BytesIO
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
-from sentence_transformers import CrossEncoder
+# Lazy imports for sentence_transformers to avoid PyTorch import issues
+# These will be imported only when needed in the functions that use them
 import numpy as np
 import faiss
 from collections import defaultdict
@@ -18,7 +18,7 @@ import yaml, json
 from pathlib import Path
 # from dotenv import load_dotenv
 # load_dotenv()
-from .content_parsing import extract_pdf_components, texts_to_plaintext
+from content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 # print(config['llm'][1]['model'])
@@ -58,6 +58,7 @@ if not LLM_MODEL:
     }.get(provider, None)
 print(f"[INFO] Provider: {provider} | Model: {LLM_MODEL}")
 
+# ----------------- LLM keyword extraction -----------------
 # def get_keywords_from_llm(natural_language_query: str, model: str = "google/gemini-2.0-flash-exp:free") -> list[str]:
 def get_keywords_from_llm(natural_language_query: str, model: str = None) -> list[str]:
     """
@@ -119,7 +120,8 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
             wait = float(retry_after)
         else:
             wait = backoff_base ** attempt
-        time_module.sleep(min(wait, 30))
+        # time_module.sleep(min(wait, 30))
+        time_module.sleep(min(wait, 3))
 
     def _parse_keywords(text: str) -> list[str]:
         return [kw.strip() for kw in (text or "").split(",") if kw.strip()]
@@ -281,19 +283,6 @@ def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: in
     return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
 
 # --- Step 1: Define a Natural Language Query and Generate Keywords with LLM ---
-
-# natural_language_query = "I want to find papers about using machine learning potentials to accelerate molecular dynamics simulations for material science."
-
-# while True:
-#     natural_language_query = input("Please enter your research query (or press Enter to exit): ")
-#     if not natural_language_query.strip():
-#         # If the user just presses Enter, exit the script gracefully.
-#         # Or, you could print a message and continue the loop.
-#         print("No query provided. Exiting.")
-#         exit()
-#     else:
-#         # If input is provided, break the loop and proceed.
-#         break
 try:
     # natural_language_query = config['input'][0]['query']
     natural_language_query = 'search_query: ' + config['input'][0]['query'] ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
@@ -302,15 +291,15 @@ except Exception as e:
 
 # Use the LLM to get keywords
 # llm_model = config['llm'][1]['model']
-keywords = get_keywords_from_llm(natural_language_query, model=LLM_MODEL)
+# keywords = get_keywords_from_llm(natural_language_query, model=LLM_MODEL)
 
-# Format the keywords into the final arXiv query string
-QUERY = format_arxiv_query(keywords)
+# # Format the keywords into the final arXiv query string
+# QUERY = format_arxiv_query(keywords)
 
-if not QUERY:
-    raise SystemExit("[ERROR] Could not generate a valid query from the LLM. Exiting.")
+# if not QUERY:
+#     raise SystemExit("[ERROR] Could not generate a valid query from the LLM. Exiting.")
 
-print(f"[INFO] Generated arXiv Query: {QUERY}")
+# print(f"[INFO] Generated arXiv Query: {QUERY}")
 
 def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][0]['pdf_path']):
     if not os.path.exists(output_dir):
@@ -328,25 +317,6 @@ def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][
     else:
         print("No PDF URL provided.")
 
-    # response = requests.get(ARXIV_API_URL, params=params)
-    # response.raise_for_status()
-
-    # entries = response.json().get('feed', {}).get('entry', [])
-    # for entry in entries:
-    #     pdf_url = entry.get('link', [])[1].get('href')  # Get the PDF link
-    #     title = entry.get('title', '').replace('/', '_').replace('\\', '_')  # Clean title for filename
-    #     pdf_filename = f"{title}.pdf"
-    #     pdf_path = Path(output_dir) / pdf_filename
-
-    #     if not pdf_path.exists():
-    #         pdf_response = requests.get(pdf_url)
-    #         pdf_response.raise_for_status()
-    #         with open(pdf_path, 'wb') as f:
-    #             f.write(pdf_response.content)
-    #         print(f"Downloaded: {pdf_filename}")
-    #     else:
-    #         print(f"File already exists: {pdf_filename}")
-
 tz_london = tz.gettz("Europe/London")
 now_local = datetime.now(tz_london)
 days = config['input'][1]['max_days']
@@ -354,126 +324,92 @@ start_date = (now_local.date() - timedelta(days=days-1))  # 含今天共100天
 start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
 end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
 
-USE_UPDATED = False
+# USE_UPDATED = False
 
-client = arxiv.Client(page_size=100, delay_seconds=3)  # 分页+限速
-search = arxiv.Search(
-    query=QUERY,
-    sort_by=arxiv.SortCriterion.SubmittedDate,  # ✅ 注意是 SortCriterion
-    sort_order=arxiv.SortOrder.Descending
-)
+# client = arxiv.Client(page_size=100, delay_seconds=3)  # 分页+限速
+# search = arxiv.Search(
+#     query=QUERY,
+#     sort_by=arxiv.SortCriterion.SubmittedDate,  # ✅ 注意是 SortCriterion
+#     sort_order=arxiv.SortOrder.Descending
+# )
 
-def in_window(dt_utc):
-    dt_local = dt_utc.astimezone(tz_london)
-    return start_dt <= dt_local <= end_dt
+# def in_window(dt_utc):
+#     dt_local = dt_utc.astimezone(tz_london)
+#     return start_dt <= dt_local <= end_dt
 
-results = []
-for r in client.results(search):
-    ts = r.updated if USE_UPDATED else r.published
-    if in_window(ts):
-        results.append(r)
-    else:
-        ts_local = ts.astimezone(tz_london)
-        if ts_local < start_dt:
-            break
+# results = []
+# for r in client.results(search):
+#     ts = r.updated if USE_UPDATED else r.published
+#     if in_window(ts):
+#         results.append(r)
+#     else:
+#         ts_local = ts.astimezone(tz_london)
+#         if ts_local < start_dt:
+#             break
 
-print(f"Found {len(results)} results between {start_dt.date()} and {end_dt.date()} (Europe/London).")
-for i, r in enumerate(results, 1):
-    authors = ", ".join(a.name for a in r.authors)
-    when_local = (r.updated if USE_UPDATED else r.published).astimezone(tz_london).strftime("%Y-%m-%d %H:%M")
-    pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
-    cats = ",".join(r.categories)
-    abstract = " ".join(r.summary.split()) 
+# print(f"Found {len(results)} results between {start_dt.date()} and {end_dt.date()} (Europe/London).")
+# for i, r in enumerate(results, 1):
+#     authors = ", ".join(a.name for a in r.authors)
+#     when_local = (r.updated if USE_UPDATED else r.published).astimezone(tz_london).strftime("%Y-%m-%d %H:%M")
+#     pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
+#     cats = ",".join(r.categories)
+#     abstract = " ".join(r.summary.split()) 
     
-    print(f"[{i}] {r.title}\n"
-          f"    Authors: {authors}\n"
-          f"    Time(UK): {when_local}\n"
-          f"    Cats: {cats}\n"
-          f"    PDF: {pdf_url}\n"
-        #   f"    Abs: {r.entry_id}\n"
-          f"    Abstract: {abstract}\n")
-    download_arxiv_pdfs(pdf_url=pdf_url, output_dir=config['source'][0]['pdf_path'])
-
-# not needed as we are using content_parsing.py
-
-# def _strip_hyphenation(t: str) -> str:
-#     return re.sub(r"-\s*\n\s*", "", t)
-
-# def _normalize_ws(t: str) -> str:
-#     t = t.replace("\r\n", "\n").replace("\r", "\n")
-#     t = re.sub(r"\n{3,}", "\n\n", t)  # 多个空行压成一个
-#     paras = [re.sub(r"[ \t]*\n[ \t]*", " ", p).strip() for p in t.split("\n\n")]
-#     paras = [re.sub(r"\s{2,}", " ", p) for p in paras if p]
-#     return "\n\n".join(paras).strip()
-
-# def _cut_refs(t: str) -> str:
-#     patt = re.compile(r"\n\s*(references|bibliography|acknowledg(e)?ments)\s*\n", re.I)
-#     last = None
-#     for m in patt.finditer("\n"+t+"\n"):
-#         last = m
-#     return t[:last.start()].strip() if last else t
-
-# def extract_pdf_text(pdf_url: str) -> str:
-#     try:
-#         r = requests.get(pdf_url, timeout=60)
-#         r.raise_for_status()
-#         reader = PdfReader(BytesIO(r.content))
-#         pages = [(p.extract_text() or "") for p in reader.pages]
-#         raw = "\n\n".join(pages)
-#         raw = _strip_hyphenation(raw)
-#         raw = _normalize_ws(raw)
-#         raw = _cut_refs(raw)
-#         return raw
-#     except Exception as e:
-#         print(f"[WARN] PDF extract failed: {e}")
-#         return ""
+#     print(f"[{i}] {r.title}\n"
+#           f"    Authors: {authors}\n"
+#           f"    Time(UK): {when_local}\n"
+#           f"    Cats: {cats}\n"
+#           f"    PDF: {pdf_url}\n"
+#         #   f"    Abs: {r.entry_id}\n"
+#           f"    Abstract: {abstract}\n")
+#     download_arxiv_pdfs(pdf_url=pdf_url, output_dir=config['source'][0]['pdf_path'])
 
 # --- Step 2: normalize docs from your `results` ---
-docs = []
-for r in results: 
-    arxiv_id = r.entry_id.split("/")[-1]
-    pdf_url  = r.pdf_url or r.entry_id.replace("abs", "pdf")
-    title_abs = f"{r.title}\n\n{(' '.join(r.summary.split())).strip()}"
-    # pdf_text = extract_pdf_text(pdf_url)
-    # pdf_file = open(config['source'][0]['pdf_path'] + '/' + pdf_url, 'rb')
-    pdf_filename = pdf_url.split("/")[-1]
-    pdf_filename += '.pdf'
-    pdf_path = Path(config['source'][0]['pdf_path']) / pdf_filename
-    # pdf_text = extract_pdf_components(pdf_path)['texts']
-    try:
-        comps = extract_pdf_components(pdf_path)
-        # Convert Docling items to a single cleaned plaintext (cuts after References, normalizes)
-        body_text = texts_to_plaintext(comps['texts'])
-    except Exception as e:
-        print(f"[WARN] Docling parse failed for {pdf_filename}: {e}")
-        body_text = ""
-    # full_text = (title_abs + ("\n\n" + body_text if body_text else "")).strip()
-    full_text = ("search_document: " + title_abs + ("\n\n" + body_text if body_text else "")).strip() ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
-    # print(full_text)
+# docs = []
+# for r in results: 
+#     arxiv_id = r.entry_id.split("/")[-1]
+#     pdf_url  = r.pdf_url or r.entry_id.replace("abs", "pdf")
+#     title_abs = f"{r.title}\n\n{(' '.join(r.summary.split())).strip()}"
+#     # pdf_text = extract_pdf_text(pdf_url)
+#     # pdf_file = open(config['source'][0]['pdf_path'] + '/' + pdf_url, 'rb')
+#     pdf_filename = pdf_url.split("/")[-1]
+#     pdf_filename += '.pdf'
+#     pdf_path = Path(config['source'][0]['pdf_path']) / pdf_filename
+#     # pdf_text = extract_pdf_components(pdf_path)['texts']
+#     try:
+#         comps = extract_pdf_components(pdf_path)
+#         # Convert Docling items to a single cleaned plaintext (cuts after References, normalizes)
+#         body_text = texts_to_plaintext(comps['texts'])
+#     except Exception as e:
+#         print(f"[WARN] Docling parse failed for {pdf_filename}: {e}")
+#         body_text = ""
+#     # full_text = (title_abs + ("\n\n" + body_text if body_text else "")).strip()
+#     full_text = ("search_document: " + title_abs + ("\n\n" + body_text if body_text else "")).strip() ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
+#     # print(full_text)
 
-    docs.append({
-        "doc_id": arxiv_id,
-        "title": r.title,
-        "text": full_text,
-        "metadata": {
-            "arxiv_id": arxiv_id,
-            "entry_id": r.entry_id,
-            "pdf_url": pdf_url,
-            "published": (r.published or r.updated).isoformat() if (r.published or r.updated) else None,
-            "authors": [a.name for a in r.authors],
-            "categories": list(r.categories),
-            "title": r.title,
-        }
-    })
+#     docs.append({
+#         "doc_id": arxiv_id,
+#         "title": r.title,
+#         "text": full_text,
+#         "metadata": {
+#             "arxiv_id": arxiv_id,
+#             "entry_id": r.entry_id,
+#             "pdf_url": pdf_url,
+#             "published": (r.published or r.updated).isoformat() if (r.published or r.updated) else None,
+#             "authors": [a.name for a in r.authors],
+#             "categories": list(r.categories),
+#             "title": r.title,
+#         }
+#     })
 
-print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
+# print(f"[INFO] Prepared {len(docs)} docs; with PDF text for {sum(1 for d in docs if len(d['text'])>len(d['title'])+20)} docs.")
 
 # --- Step 3: chunking (token-based) ---
 ## TODO: save chunk => Ritesh
 enc = tiktoken.get_encoding("cl100k_base")
 
-chunk_size = config['rag'][4]['chunk_size']
-overlap = config['rag'][5]['overlap']
+# chunk_size = config['rag'][4]['chunk_size']
+# overlap = config['rag'][5]['overlap']
 
 def chunk_text(text: str, chunk_size: int = None, overlap: int = None):
     if chunk_size is None:
@@ -493,71 +429,60 @@ def chunk_text(text: str, chunk_size: int = None, overlap: int = None):
             break
     return chunks or [text]
 
-chunks = []
-for d in docs:
-    parts = chunk_text(d["text"], chunk_size, overlap)
-    for j, p in enumerate(parts):
-        chunks.append({
-            "text": p,
-            "doc_id": d["doc_id"],
-            "metadata": d["metadata"],
-            "chunk_id": f"{d['doc_id']}::chunk{j:04d}"
-        })
+# chunks = []
+# for d in docs:
+#     parts = chunk_text(d["text"], chunk_size, overlap)
+#     for j, p in enumerate(parts):
+#         chunks.append({
+#             "text": p,
+#             "doc_id": d["doc_id"],
+#             "metadata": d["metadata"],
+#             "chunk_id": f"{d['doc_id']}::chunk{j:04d}"
+#         })
 
-print(f"[INFO] Total chunks: {len(chunks)}")
+# print(f"[INFO] Total chunks: {len(chunks)}")
 
 # --- Step 4: embeddings ---
 
 # EMB_MODEL = "BAAI/bge-small-en-v1.5"
-EMB_MODEL = config['rag'][3]['embedding_model']
-emb = SentenceTransformer(EMB_MODEL, trust_remote_code=True)
+# EMB_MODEL = config['rag'][3]['embedding_model']
+# emb = SentenceTransformer(EMB_MODEL, trust_remote_code=True)
 
-chunk_texts = [c["text"] for c in chunks]
-X = emb.encode(chunk_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=True)
-X = np.asarray(X, dtype="float32")
-print("[INFO] Embeddings:", X.shape)
+# chunk_texts = [c["text"] for c in chunks]
+# X = emb.encode(chunk_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=True)
+# X = np.asarray(X, dtype="float32")
+# print("[INFO] Embeddings:", X.shape)
 
-# --- Step 5: FAISS index ---
-dim = X.shape[1]
-index = faiss.IndexFlatIP(dim)
-index.add(X)
-print("[INFO] Index size:", index.ntotal)
+# # --- Step 5: FAISS index ---
+# dim = X.shape[1]
+# index = faiss.IndexFlatIP(dim)
+# index.add(X)
+# print("[INFO] Index size:", index.ntotal)
 
 # --- Step 6: Retrieval + Rerank ---
-reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # 轻量高性价比
+# reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")  # moved to lazy import
 
 # --- Step 6b: Multi-query + doc-level rerank + recency boost ---
 
-'''
-faiss_per_query
+# def _retrieve_one(query, faiss_k=80):
+#     qv = emb.encode([query], normalize_embeddings=True)
+#     D, I = index.search(np.asarray(qv, dtype="float32"), faiss_k)
+#     cands = [chunks[i] for i in I[0] if 0 <= i < len(chunks)]
+#     if not cands:
+#         return []
+#     pairs = [(query, c["text"]) for c in cands]
+#     scores = reranker.predict(pairs)  # 越大越相关
+#     return list(zip(cands, scores))
 
-final_docs
+# def _aggregate_by_doc(paired_list):
+#     best_by_doc = {}  # doc_id -> (chunk, score)
+#     for ch, s in paired_list:
+#         did = ch["doc_id"]
+#         if (did not in best_by_doc) or (s > best_by_doc[did][1]):
+#             best_by_doc[did] = (ch, s)
+#     return best_by_doc  # dict
 
-alpha_recency
-
-half_life_days
-
-per_doc_chunks
-'''
-
-def _retrieve_one(query, faiss_k=80):
-    qv = emb.encode([query], normalize_embeddings=True)
-    D, I = index.search(np.asarray(qv, dtype="float32"), faiss_k)
-    cands = [chunks[i] for i in I[0] if 0 <= i < len(chunks)]
-    if not cands:
-        return []
-    pairs = [(query, c["text"]) for c in cands]
-    scores = reranker.predict(pairs)  # 越大越相关
-    return list(zip(cands, scores))
-
-def _aggregate_by_doc(paired_list):
-    best_by_doc = {}  # doc_id -> (chunk, score)
-    for ch, s in paired_list:
-        did = ch["doc_id"]
-        if (did not in best_by_doc) or (s > best_by_doc[did][1]):
-            best_by_doc[did] = (ch, s)
-    return best_by_doc  # dict
-
+# -------- Retrieval + scoring helpers (unchanged logic) --------
 def _recency_score(iso_datetime: str, half_life_days=60, tz_str="Europe/London"):
     if not iso_datetime:
         return 0.0
@@ -590,7 +515,8 @@ def answer_query_with_context(question: str, context: str, model: str | None = N
     max_retries, backoff_base = 5, 1.6
     def _sleep(attempt: int, retry_after: str | None):
         wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff_base ** attempt
-        time_module.sleep(min(wait, 30))
+        # time_module.sleep(min(wait, 30))
+        time_module.sleep(min(wait, 3))
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -662,11 +588,6 @@ def answer_query_with_context(question: str, context: str, model: str | None = N
                 _sleep(attempt, None); continue
             return f"[ERROR] QA request failed: {e}"
 
-# Generate a direct answer to the initial query using retrieved context
-# qa_model = LLM_MODEL 
-# answer = answer_query_with_context(natural_language_query, context, model=qa_model)
-# print("\n[ANSWER]\n" + answer + "\n")
-
 def summarize_docs(docs, model: str | None = None) -> str:
     """
     Summarize a list of documents (chunks) into a concise overview using the selected LLM.
@@ -691,7 +612,8 @@ def summarize_docs(docs, model: str | None = None) -> str:
     max_retries, backoff_base = 5, 1.6
     def _sleep(attempt: int, retry_after: str | None):
         wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff_base ** attempt
-        time_module.sleep(min(wait, 30))
+        # time_module.sleep(min(wait, 30))
+        time_module.sleep(min(wait, 3))
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -758,73 +680,73 @@ def summarize_docs(docs, model: str | None = None) -> str:
             return f"[ERROR] Summarization request failed: {getattr(e.response,'text','')[:300]}"
 ### finish
 
-def retrieve_recent_interest(
-    queries,
-    faiss_per_query=80,
-    final_docs=12,
-    per_doc_chunks=1,
-    alpha_recency=0.35,  # 0~1，越大越偏向新文章
-):
-    # Allow a single query string or a list of queries
-    if isinstance(queries, str):
-        queries = [queries]
+# def retrieve_recent_interest(
+#     queries,
+#     faiss_per_query=80,
+#     final_docs=12,
+#     per_doc_chunks=1,
+#     alpha_recency=0.35,  # 0~1，越大越偏向新文章
+# ):
+#     # Allow a single query string or a list of queries
+#     if isinstance(queries, str):
+#         queries = [queries]
 
-    all_pairs = []
-    for q in queries:
-        all_pairs.extend(_retrieve_one(q, faiss_k=faiss_per_query))
+#     all_pairs = []
+#     for q in queries:
+#         all_pairs.extend(_retrieve_one(q, faiss_k=faiss_per_query))
 
-    if not all_pairs:
-        return []
+#     if not all_pairs:
+#         return []
 
-    best_by_doc = _aggregate_by_doc(all_pairs)
+#     best_by_doc = _aggregate_by_doc(all_pairs)
 
-    raw_scores = np.array([s for (_, s) in best_by_doc.values()], dtype="float32")
-    if raw_scores.size == 0:
-        return []
-    s_min, s_max = float(raw_scores.min()), float(raw_scores.max())
-    def _norm(x):
-        return 0.0 if s_max == s_min else (x - s_min) / (s_max - s_min)
+#     raw_scores = np.array([s for (_, s) in best_by_doc.values()], dtype="float32")
+#     if raw_scores.size == 0:
+#         return []
+#     s_min, s_max = float(raw_scores.min()), float(raw_scores.max())
+#     def _norm(x):
+#         return 0.0 if s_max == s_min else (x - s_min) / (s_max - s_min)
 
-    scored_docs = []
-    for did, (ch, rel_s) in best_by_doc.items():
-        m = ch["metadata"]
-        rec_s = _recency_score(m.get("published"))
-        comb = (1 - alpha_recency) * _norm(rel_s) + alpha_recency * rec_s
-        scored_docs.append((did, ch, rel_s, rec_s, comb))
+#     scored_docs = []
+#     for did, (ch, rel_s) in best_by_doc.items():
+#         m = ch["metadata"]
+#         rec_s = _recency_score(m.get("published"))
+#         comb = (1 - alpha_recency) * _norm(rel_s) + alpha_recency * rec_s
+#         scored_docs.append((did, ch, rel_s, rec_s, comb))
 
-    scored_docs.sort(key=lambda t: t[4], reverse=True)
-    top_docs = scored_docs[:final_docs]
+#     scored_docs.sort(key=lambda t: t[4], reverse=True)
+#     top_docs = scored_docs[:final_docs]
 
-    out_hits = []
-    for did, best_chunk, rel_s, rec_s, comb in top_docs:
-        # out_hits.append(best_chunk)
-        # annotate best chunk with doc-level scores
-        best_annot = dict(best_chunk)
-        best_annot["rel_score"] = float(rel_s)
-        best_annot["recency_score"] = float(rec_s)
-        best_annot["combined_score"] = float(comb)
-        out_hits.append(best_annot)
+#     out_hits = []
+#     for did, best_chunk, rel_s, rec_s, comb in top_docs:
+#         # out_hits.append(best_chunk)
+#         # annotate best chunk with doc-level scores
+#         best_annot = dict(best_chunk)
+#         best_annot["rel_score"] = float(rel_s)
+#         best_annot["recency_score"] = float(rec_s)
+#         best_annot["combined_score"] = float(comb)
+#         out_hits.append(best_annot)
 
-        if per_doc_chunks > 1:
+#         if per_doc_chunks > 1:
 
-            base_id = best_chunk["chunk_id"]
-            try:
-                base_idx = int(base_id.split("::chunk")[-1])
-                same_doc = [c for c in chunks if c["doc_id"] == did]
-                neighbors = [c for c in same_doc if abs(int(c["chunk_id"].split("::chunk")[-1]) - base_idx) <= 2]
-                neighbors = [c for c in neighbors if c["chunk_id"] != base_id]
-                # out_hits.extend(neighbors[:max(0, per_doc_chunks - 1)])
-                # carry scores on neighbors too (optional, copy best's scores)
-                for nb in neighbors[:max(0, per_doc_chunks - 1)]:
-                    nb_annot = dict(nb)
-                    nb_annot["rel_score"] = float(rel_s)
-                    nb_annot["recency_score"] = float(rec_s)
-                    nb_annot["combined_score"] = float(comb)
-                    out_hits.append(nb_annot)
-            except Exception:
-                pass
+#             base_id = best_chunk["chunk_id"]
+#             try:
+#                 base_idx = int(base_id.split("::chunk")[-1])
+#                 same_doc = [c for c in chunks if c["doc_id"] == did]
+#                 neighbors = [c for c in same_doc if abs(int(c["chunk_id"].split("::chunk")[-1]) - base_idx) <= 2]
+#                 neighbors = [c for c in neighbors if c["chunk_id"] != base_id]
+#                 # out_hits.extend(neighbors[:max(0, per_doc_chunks - 1)])
+#                 # carry scores on neighbors too (optional, copy best's scores)
+#                 for nb in neighbors[:max(0, per_doc_chunks - 1)]:
+#                     nb_annot = dict(nb)
+#                     nb_annot["rel_score"] = float(rel_s)
+#                     nb_annot["recency_score"] = float(rec_s)
+#                     nb_annot["combined_score"] = float(comb)
+#                     out_hits.append(nb_annot)
+#             except Exception:
+#                 pass
 
-    return out_hits
+#     return out_hits
 
 # --- Step 7: pack context and get a direct answer ---
 def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
@@ -839,55 +761,6 @@ def format_context(hits, max_ctx_tokens=1800, model_enc="cl100k_base"):
         parts.append(block)
         used += len(tok)
     return "\n---\n".join(parts)
-
-# def pretty_print_docs(hits, max_chars=300, save_npz_path=None):
-    # seen = set()
-    # for h in hits:
-    #     did = h["doc_id"]
-    #     if did in seen:
-    #         continue
-    #     seen.add(did)
-    #     m = h["metadata"]
-    #     title = m.get("title", "") if "title" in m else ""
-    #     authors = ", ".join(m.get("authors", [])) or "Unknown"
-    #     when = m.get("published", "") or ""
-    #     print(h)
-    #     # snip = h["text"].strip().replace("\n", " ")
-    #     summary = summarize_docs([h], model=llm_model)
-    #     snip = summary.replace("\n", " ")
-    #     if len(snip) > max_chars: snip = snip[:max_chars] + " ..."
-    #     print(f"[{len(seen)}] arXiv:{m.get('arxiv_id','')}")
-    #     print(f"    Title : {title}")
-    #     print(f"    Authors: {authors}")
-    #     print(f"    Date  : {when}")
-    #     print(f"    PDF   : {m.get('pdf_url','')}")
-    #     print(f"    Summary  : {snip}\n")
-
-    # doc_order = []
-    # doc2chunks = {}
-
-    # for h in hits:
-    #     aid = h["metadata"].get("arxiv_id") or h["doc_id"]
-    #     if aid not in doc2chunks:
-    #         doc2chunks[aid] = []
-    #         doc_order.append(aid)
-    #     doc2chunks[aid].append({
-    #         "chunk_id": h["chunk_id"],
-    #         "text": h["text"],
-    #     })
-
-    # if save_npz_path:
-    #     arxiv_ids = np.array(doc_order, dtype=object)
-    #     chunk_ids = np.array([[c["chunk_id"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-    #     save_kwargs = {
-    #         "arxiv_ids": arxiv_ids,
-    #         "chunk_ids": chunk_ids,
-    #     }
-    #     chunk_texts = np.array([[c["text"] for c in doc2chunks[aid]] for aid in doc_order], dtype=object)
-    #     save_kwargs["chunk_texts"] = chunk_texts
-
-    #     np.savez(save_npz_path, **save_kwargs)
-    #     print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
 
 def pretty_print_docs(hits, max_chars=300, save_npz_path=None, final_answer: str | None = None, question: str | None = None):
     # Group hits by document (best chunk is first for each doc)
@@ -985,19 +858,20 @@ def pretty_print_docs(hits, max_chars=300, save_npz_path=None, final_answer: str
         print(f"[INFO] Saved mapping to {save_npz_path}. Load with: np.load('{save_npz_path}', allow_pickle=True)")
 
 # interest_queries = make_interest_queries(core="translational medicine", focus="edge computing")
-hits = retrieve_recent_interest(
-    natural_language_query,
-    faiss_per_query=80,
-    final_docs=12,
-    per_doc_chunks=1,
-    alpha_recency=0.35
-)
+# hits = retrieve_recent_interest(
+#     natural_language_query,
+#     faiss_per_query=80,
+#     final_docs=12,
+#     per_doc_chunks=1,
+#     alpha_recency=0.35
+# )
 
 # pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz")
-context = format_context(hits)
-final_answer = answer_query_with_context(natural_language_query, context, model=LLM_MODEL)
-print("\n[ANSWER]\n" + final_answer + "\n")
-pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_answer, question=natural_language_query)
+# context = format_context(hits)
+# final_answer = answer_query_with_context(natural_language_query, context, model=LLM_MODEL)
+# print("\n[ANSWER]\n" + final_answer + "\n")
+# save_embed_path = config['output'][2]['npz_path']
+# pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_answer, question=natural_language_query)
 
 # def load_hits_from_npz(npz_path: str):
 #     data = np.load(npz_path, allow_pickle=True)
@@ -1047,3 +921,246 @@ pretty_print_docs(hits, save_npz_path="arxiv_out_hits.npz", final_answer=final_a
 
 # context = format_context(hits)
 # print(context)
+
+# ----------------- MAIN PIPELINE WRAPPED -----------------
+def main(
+    query: str | None = None,
+    max_days: int | None = None,
+    max_keywords: int | None = None,
+    per_doc_chunks: int | None = None,
+    faiss_per_query: int = 80,
+    final_docs: int = 12,
+    recency_alpha: float = 0.35,
+    save_npz: str = "arxiv_out_hits.npz",
+    build_embeddings: bool = True,
+):
+    """
+    Execute the full pipeline:
+      1. Keyword extraction
+      2. arXiv search + PDF download
+      3. PDF parsing -> docs
+      4. Chunking
+      5. Embeddings + FAISS
+      6. Retrieval + scoring
+      7. Context assembly + answer + summaries
+    """
+    # -------- Step 1: Query & keywords --------
+    if query is None:
+        base_query = config['input'][0]['query']
+    else:
+        base_query = query
+    natural_language_query = "search_query: " + base_query  # embedding prefix
+    if max_days is None:
+        max_days = config['input'][1]['max_days']
+    if max_keywords is None:
+        max_keywords = config['input'][2]['max_keywords']
+    if per_doc_chunks is None:
+        per_doc_chunks = config['rag'][2]['per_doc_chunks']
+
+    keywords = get_keywords_from_llm(natural_language_query, model=LLM_MODEL)
+    QUERY = format_arxiv_query(keywords, max_keywords=max_keywords)
+    if not QUERY:
+        print("[ERROR] Could not generate a valid query.")
+        return {}
+
+    print(f"[INFO] Generated arXiv Query: {QUERY}")
+
+    # -------- Step 2: arXiv search & download --------
+    tz_london = tz.gettz("Europe/London")
+    now_local = datetime.now(tz_london)
+    start_date = (now_local.date() - timedelta(days=max_days - 1))
+    start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
+    end_dt = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
+    USE_UPDATED = False
+
+    def in_window(dt_utc):
+        dt_local = dt_utc.astimezone(tz_london)
+        return start_dt <= dt_local <= end_dt
+
+    client = arxiv.Client(page_size=100, delay_seconds=3)
+    search = arxiv.Search(query=QUERY,
+                          sort_by=arxiv.SortCriterion.SubmittedDate,
+                          sort_order=arxiv.SortOrder.Descending)
+    results = []
+    for r in client.results(search):
+        ts = r.updated if USE_UPDATED else r.published
+        if in_window(ts):
+            results.append(r)
+        else:
+            if ts.astimezone(tz_london) < start_dt:
+                break
+
+    print(f"Found {len(results)} results between {start_dt.date()} and {end_dt.date()} (Europe/London).")
+    pdf_dir = config['source'][0]['pdf_path']
+    os.makedirs(pdf_dir, exist_ok=True)
+    for i, r in enumerate(results, 1):
+        pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
+        abstract = " ".join(r.summary.split())
+        print(f"[{i}] {r.title}\n    PDF: {pdf_url}\n    Abstract: {abstract[:180]}...\n")
+        try:
+            download_arxiv_pdfs(pdf_url=pdf_url, output_dir=pdf_dir)
+        except Exception as e:
+            print(f"[WARN] PDF download failed: {e}")
+
+    # -------- Step 3: Normalize docs --------
+    docs = []
+    for r in results:
+        arxiv_id = r.entry_id.split("/")[-1]
+        pdf_url = r.pdf_url or r.entry_id.replace("abs", "pdf")
+        title_abs = f"{r.title}\n\n{(' '.join(r.summary.split())).strip()}"
+        pdf_filename = pdf_url.split("/")[-1] + ".pdf"
+        pdf_path = Path(pdf_dir) / pdf_filename
+        try:
+            comps = extract_pdf_components(pdf_path)
+            body_text = texts_to_plaintext(comps['texts'])
+        except Exception as e:
+            print(f"[WARN] Parse failed for {pdf_filename}: {e}")
+            body_text = ""
+        full_text = ("search_document: " + title_abs + ("\n\n" + body_text if body_text else "")).strip()
+        docs.append({
+            "doc_id": arxiv_id,
+            "title": r.title,
+            "text": full_text,
+            "metadata": {
+                "arxiv_id": arxiv_id,
+                "entry_id": r.entry_id,
+                "pdf_url": pdf_url,
+                "published": (r.published or r.updated).isoformat() if (r.published or r.updated) else None,
+                "authors": [a.name for a in r.authors],
+                "categories": list(r.categories),
+                "title": r.title,
+            }
+        })
+    print(f"[INFO] Prepared {len(docs)} docs.")
+
+    # -------- Step 4: Chunking --------
+    enc = tiktoken.get_encoding("cl100k_base")
+    chunk_size = config['rag'][4]['chunk_size']
+    overlap = config['rag'][5]['overlap']
+
+    def chunk_text(text: str, chunk_size: int, overlap: int):
+        if not text.strip(): return []
+        toks = enc.encode(text)
+        chunks_local = []
+        step = max(1, chunk_size - overlap)
+        for i in range(0, len(toks), step):
+            window = toks[i:i+chunk_size]
+            if not window: break
+            chunks_local.append(enc.decode(window))
+            if i + chunk_size >= len(toks): break
+        return chunks_local or [text]
+
+    chunks = []
+    for d in docs:
+        parts = chunk_text(d["text"], chunk_size, overlap)
+        for j, p in enumerate(parts):
+            chunks.append({
+                "text": p,
+                "doc_id": d["doc_id"],
+                "metadata": d["metadata"],
+                "chunk_id": f"{d['doc_id']}::chunk{j:04d}"
+            })
+    print(f"[INFO] Total chunks: {len(chunks)}")
+
+    # -------- Step 5: Embeddings + FAISS --------
+    if build_embeddings:
+        # Lazy import to avoid PyTorch import issues
+        from sentence_transformers import SentenceTransformer
+        EMB_MODEL = config['rag'][3]['embedding_model']
+        emb = SentenceTransformer(EMB_MODEL, trust_remote_code=True)
+        chunk_texts = [c["text"] for c in chunks]
+        X = emb.encode(chunk_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=True)
+        X = np.asarray(X, dtype="float32")
+        print("[INFO] Embeddings:", X.shape)
+        dim = X.shape[1]
+        index = faiss.IndexFlatIP(dim)
+        index.add(X)
+        print("[INFO] Index size:", index.ntotal)
+        # Lazy import to avoid PyTorch import issues
+        from sentence_transformers import CrossEncoder
+        reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+        def _retrieve_one(q, faiss_k=80):
+            qv = emb.encode([q], normalize_embeddings=True)
+            D, I = index.search(np.asarray(qv, dtype="float32"), faiss_k)
+            cands = [chunks[i] for i in I[0] if 0 <= i < len(chunks)]
+            if not cands: return []
+            pairs = [(q, c["text"]) for c in cands]
+            scores = reranker.predict(pairs)
+            return list(zip(cands, scores))
+
+        def _aggregate_by_doc(paired):
+            best = {}
+            for ch, s in paired:
+                did = ch["doc_id"]
+                if (did not in best) or (s > best[did][1]):
+                    best[did] = (ch, s)
+            return best
+
+        all_pairs = []
+        query_list = [natural_language_query]
+        for q in query_list:
+            all_pairs.extend(_retrieve_one(q, faiss_k=faiss_per_query))
+
+        best_by_doc = _aggregate_by_doc(all_pairs)
+        raw_scores = np.array([s for (_, s) in best_by_doc.values()], dtype="float32")
+        if raw_scores.size == 0:
+            print("[WARN] No retrieval hits.")
+            hits = []
+        else:
+            s_min, s_max = float(raw_scores.min()), float(raw_scores.max())
+            def _norm(x): return 0.0 if s_max == s_min else (x - s_min) / (s_max - s_min)
+            scored_docs = []
+            for did, (ch, rel_s) in best_by_doc.items():
+                m = ch["metadata"]
+                rec_s = _recency_score(m.get("published"))
+                comb = (1 - recency_alpha) * _norm(rel_s) + recency_alpha * rec_s
+                scored_docs.append((did, ch, rel_s, rec_s, comb))
+            scored_docs.sort(key=lambda t: t[4], reverse=True)
+            top_docs = scored_docs[:final_docs]
+            hits = []
+            for did, best_chunk, rel_s, rec_s, comb in top_docs:
+                b = dict(best_chunk)
+                b["rel_score"] = float(rel_s)
+                b["recency_score"] = float(rec_s)
+                b["combined_score"] = float(comb)
+                hits.append(b)
+                if per_doc_chunks > 1:
+                    base_id = best_chunk["chunk_id"]
+                    try:
+                        base_idx = int(base_id.split("::chunk")[-1])
+                        same_doc = [c for c in chunks if c["doc_id"] == did]
+                        neighbors = [c for c in same_doc if abs(int(c["chunk_id"].split("::chunk")[-1]) - base_idx) <= 2]
+                        neighbors = [c for c in neighbors if c["chunk_id"] != base_id]
+                        for nb in neighbors[:max(0, per_doc_chunks - 1)]:
+                            nb_annot = dict(nb)
+                            nb_annot["rel_score"] = float(rel_s)
+                            nb_annot["recency_score"] = float(rec_s)
+                            nb_annot["combined_score"] = float(comb)
+                            hits.append(nb_annot)
+                    except Exception:
+                        pass
+    else:
+        hits = []  # embeddings disabled
+
+    # -------- Step 6: Answer & save --------
+    context = format_context(hits)
+    final_answer = answer_query_with_context(natural_language_query, context, model=LLM_MODEL)
+    print("\n[ANSWER]\n" + final_answer + "\n")
+    pretty_print_docs(hits, save_npz_path=save_npz, final_answer=final_answer, question=natural_language_query)
+
+    return {
+        "query": natural_language_query,
+        "keywords": keywords,
+        "arxiv_query": QUERY,
+        "num_results": len(results),
+        "num_docs": len(docs),
+        "num_chunks": len(chunks),
+        "hits": len(hits),
+        "final_answer": final_answer,
+        "npz_path": save_npz,
+    }
+
+# ----------------- ENTRY POINT -----------------
+if __name__ == "__main__":
+    main()
