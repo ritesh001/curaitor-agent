@@ -1,3 +1,37 @@
+# curaitor-agent  
+**AI agent for scientific data extraction**  
+Part of **[Schmidt OxRSE Workshop](https://www.oxrse.ox.ac.uk/)** (Sep 11–20, 2025)  
+
+---
+
+## 📖 Overview  
+Curaitor Agent is an **AI-powered tool** designed to extract, organize, and process **scientific data**.  
+It provides:  
+- A **web interface** for running the agent.  
+- **Model Context Protocol (MCP) inspector** integration to test tools and server connections.  
+
+---
+
+## ⚡ Quick Start  
+
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone repo
+git clone <your-repo-url>
+cd curaitor-agent
+
+# Initialize project
+uv init
+uv add -r requirements.txt
+
+# Run web interface
+uv run adk web
+
+
+
+
 # curaitor-agent
 AI agent for scientific data extraction
 Part of Schmidt OxRSE workshop Sep 11-20, 2025
