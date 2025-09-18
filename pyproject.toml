@@ -37,4 +37,5 @@ dependencies = [
     "pandas>=2.3.0",
     "docling>=2.45.0",
     "docling-core>=2.45.0",
+    "pytest>=8.4.0",
 ]
