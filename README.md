@@ -2,17 +2,16 @@
 AI agent for scientific data extraction
 Part of Schmidt OxRSE workshop Sep 11-20, 2025
 
-## Team members
-
-
-
 # Installation
 - Install uv 
 `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 - Clone the repo, then `cd` into the repo
 - Initialize the project
-`uv add -r requirements.txt` or `uv sync`
+`uv init` and
+`uv add -r requirements.txt`
+Or
+`uv init --from pyproject.toml`
 - Run agent web interface
 `uv run adk web`
 
