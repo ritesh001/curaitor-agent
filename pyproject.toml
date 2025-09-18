@@ -5,8 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "apscheduler>=3.11.0",
     "arxiv==2.2.0",
+    "asyncio>=4.0.0",
     "crawler==0.0.2",
+    "dataclasses>=0.8",
+    "datetime>=5.5",
     "extractor==0.5",
     "faiss-cpu==1.12.0",
     "google-adk>=1.14.1",
@@ -15,6 +19,7 @@ dependencies = [
     "langchain-ollama==0.3.8",
     "langchain-openai==0.3.33",
     "litellm>=1.77.1",
+    "logging>=0.4.9.6",
     "mcp>=1.14.0",
     "npx>=0.1.6",
     "numpy==2.3.3",
@@ -28,4 +33,5 @@ dependencies = [
     "scrapy==2.13.3",
     "sentence-transformers==5.1.0",
     "tiktoken==0.11.0",
+    "typing>=3.10.0.0",
 ]
