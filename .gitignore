@@ -54,3 +54,5 @@ Thumbs.db
 papers/
 data/agent_papers/
 data/tracker/*
+secrets/
+note.txt
