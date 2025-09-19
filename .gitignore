@@ -55,4 +55,5 @@ papers/
 data/agent_papers/
 data/tracker/*
 secrets/
-note.txt
+curaitor_agent/secrets/*
+note.txtcuraitor_agent/secrets/
