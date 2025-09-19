@@ -107,35 +107,136 @@ def extract_info(paper_id: str) -> str:
     return f"There's no saved information related to paper {paper_id}."
 
 @mcp.tool()
-# async def send_email_tool(params: dict) -> TextContent:
 def send_email_tool(params: dict) -> TextContent:
     """
-        Send an email using Gmail.
-        Supports plain text or HTML.
-        format of params (example in note.txt):
-        {
-            "to": {"type":"string", "description":"Recipient email address", default: "nsophonrat2@gmail.com"},
-            "subject": {"type":"string"},
-            "body": {"type":"string", "description":"Message body (plain text by default)"},
-            "html": {"type":"boolean", "default": False},
-            },
-            "required": ["to","subject","body"],
-        }
-    )
+    Send an email using Gmail. Supports plain text or HTML.
+
+    Accepted call shapes (both valid):
+
+      1) Top-level fields (preferred):
+         {
+           "to": "user@example.com",
+           "subject": "Hello",
+           "body": "Hi there",
+           "html": false,
+           "cc": "cc@example.com",          # optional
+           "bcc": "hidden@example.com",     # optional
+           "reply_to": "me@example.com",    # optional
+           "from_alias": "Agent Bot"        # optional
+         }
+
+      2) Legacy wrapper:
+         { "params": { ...same fields... } }
+
+    Required: "to" (str), "subject" (str), "body" (str).
+    Optional: "html" (bool), "cc", "bcc", "reply_to", "from_alias" (str).
+
+    Success:
+      { "success": true, "message_id": "...", "thread_id": "...", "to": "...", "subject": "...", "preview": "..." }
+
+    Validation error:
+      { "success": false, "error": { "code": "validation_error", ... } }
+
+    Auth needed :
+      { "success": false, "error": { "code": "auth_required", "message": "...", "auth_url": "https://accounts.google.com/..." } }
     """
-    required_fields = ["to", "subject", "body"]
-    missing = [field for field in required_fields if not params.get(field)]
+    # ---- Normalize shape ----
+    payload = params.get("params") if isinstance(params, dict) and "params" in params else params
+    if not isinstance(payload, dict):
+        example = {"to": "user@example.com", "subject": "Hello", "body": "Hi", "html": False}
+        err = {
+            "success": False,
+            "error": {
+                "code": "validation_error",
+                "message": "Top-level object must be a dict of fields OR contain a dict under key 'params'.",
+                "expected_shape": "Provide fields at top-level OR under a top-level 'params' object.",
+                "example": example,
+            },
+        }
+        return TextContent(type="text", text=json.dumps(err, indent=2))
+
+    # ---- Required fields ----
+    required = ["to", "subject", "body"]
+    missing = [k for k in required if k not in payload]
     if missing:
-        error_msg = f"Missing required fields: {', '.join(missing)}"
-        # return Message(role="tool", content=[TextContent(text=json.dumps({"error": error_msg}, indent=2))])
-        # return Message(role="tool", content=[{"type": "text", "text": json.dumps(result, indent=2)}])
-        return TextContent(type="text", text=json.dumps(result, indent=2))
-    result = gmail_send(**params)
-    print(f"Email sent result: {result}")
-    # return Message(role="tool", content=[TextContent(text=json.dumps(result, indent=2))])
-    # return Message(role="tool", content=[{"type": "text", "text": json.dumps(result, indent=2)}])
-    # return result
-    return TextContent(type="text", text=json.dumps(result, indent=2))
+        example = {"to": "user@example.com", "subject": "Hello", "body": "Hi", "html": False}
+        err = {
+            "success": False,
+            "error": {
+                "code": "validation_error",
+                "message": f"Missing required fields: {', '.join(missing)}",
+                "expected_shape": "Provide fields at top-level OR under a top-level 'params' object.",
+                "example": example,
+            },
+        }
+        return TextContent(type="text", text=json.dumps(err, indent=2))
+
+    # ---- Type checks ----
+    type_errors = []
+    if not isinstance(payload.get("to"), str): type_errors.append("to must be a string")
+    if not isinstance(payload.get("subject"), str): type_errors.append("subject must be a string")
+    if not isinstance(payload.get("body"), str): type_errors.append("body must be a string")
+    if "html" in payload and not isinstance(payload["html"], bool): type_errors.append("html must be a boolean")
+    for opt in ["cc", "bcc", "reply_to", "from_alias"]:
+        if opt in payload and not isinstance(payload[opt], str):
+            type_errors.append(f"{opt} must be a string")
+    if type_errors:
+        err = {
+            "success": False,
+            "error": {
+                "code": "validation_error",
+                "message": "; ".join(type_errors),
+                "example": {"to":"user@example.com","subject":"Hello","body":"Hi","html":False},
+            },
+        }
+        return TextContent(type="text", text=json.dumps(err, indent=2))
+
+    # ---- Call gmail_send ----
+    allowed_keys = {"to", "subject", "body", "html", "cc", "bcc", "reply_to", "from_alias"}
+    call_kwargs = {k: payload[k] for k in allowed_keys if k in payload}
+
+    try:
+        result = gmail_send(**call_kwargs)
+        out = {
+            "success": True,
+            "message_id": result.get("id"),
+            "thread_id": result.get("threadId"),
+            "to": payload.get("to"),
+            "subject": payload.get("subject"),
+            "preview": (payload.get("body") or "")[:160],
+        }
+        return TextContent(type="text", text=json.dumps(out, indent=2))
+
+    except AuthRequired as e:
+        # New: Return a direct OAuth URL so the user can authenticate explicitly.
+        err = {
+            "success": False,
+            "error": {
+                "code": "auth_required",
+                "message": (
+                    "Authentication is required to send email. "
+                    "Open the URL to grant access, then retry."
+                ),
+                "auth_url": e.auth_url,
+                "details": e.original_message,  # e.g., "no method available for opening 'https:...'"
+            },
+            "input": {k: call_kwargs.get(k) for k in ("to", "subject", "html", "cc", "bcc", "reply_to", "from_alias")},
+        }
+        return TextContent(type="text", text=json.dumps(err, indent=2))
+
+    except Exception as e:
+        # Generic failure
+        err = {
+            "success": False,
+            "error": {
+                "code": "send_failed",
+                "message": str(e),
+                "hint": "Check Gmail auth (credentials/token), scopes, and network. Ensure SCOPES includes gmail.send.",
+            },
+            "input": {k: call_kwargs.get(k) for k in ("to", "subject", "html", "cc", "bcc", "reply_to", "from_alias")},
+        }
+        return TextContent(type="text", text=json.dumps(err, indent=2))
+
 
 if __name__ == "__main__":
     # Initialize and run the server

@@ -11,10 +11,18 @@ from googleapiclient.discovery import build
 
 load_dotenv()
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-CREDENTIALS_PATH = os.getenv("GMAIL_CREDENTIALS_PATH")
-TOKEN_PATH = os.getenv("GMAIL_TOKEN_PATH")
-# print(f"CREDENTIALS_PATH: {CREDENTIALS_PATH}")
-# print(f"TOKEN_PATH: {TOKEN_PATH}")
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS_PATH = os.path.join(ROOT_DIR, os.getenv("GMAIL_CREDENTIALS_PATH"))
+TOKEN_PATH = os.path.join(ROOT_DIR, os.getenv("GMAIL_TOKEN_PATH"))
+print(f"CREDENTIALS_PATH: {CREDENTIALS_PATH}")
+print(f"TOKEN_PATH: {TOKEN_PATH}")
+
+class AuthRequired(Exception):
+    def __init__(self, auth_url: str, original_message: str = ""):
+        super().__init__(original_message or "Authentication required")
+        self.auth_url = auth_url
+        self.original_message = original_message
+
 
 def _svc():
     creds = None
@@ -24,9 +32,23 @@ def _svc():
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-        creds = flow.run_local_server(port=0)
+        try:
+            # Preferred path: launches a local server and opens the browser.
+            creds = flow.run_local_server(port=0)
+        except Exception as e:
+            # Common headless error: "no method available for opening 'https:...'"
+            # Fall back to returning an explicit URL so the caller can prompt the user.
+            auth_url, _state = flow.authorization_url(
+                access_type="offline",
+                include_granted_scopes="true",
+                prompt="consent",
+            )
+            raise AuthRequired(auth_url=auth_url, original_message=str(e)) from e
+
+        # Persist new token on success
         with open(TOKEN_PATH, "w") as f:
             f.write(creds.to_json())
+
     return build("gmail", "v1", credentials=creds)
 
 def _build_message(
@@ -64,6 +86,9 @@ def gmail_send(
     reply_to: Optional[str] = None,
     from_alias: Optional[str] = None,
 ) -> dict:
+    """
+    Send an email via Gmail API. Returns {"id": ..., "threadId": ...} on success.
+    """
     svc = _svc()
     msg = _build_message(
         to=to, subject=subject, body=body, html=html,
