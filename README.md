@@ -24,11 +24,28 @@ cd curaitor-agent
 
 # Initialize project
 uv init
-uv add -r requirements.txt
+
+# Edit config file
+choose the model you want to use under llm:
+  - provider: openai
+  - model: "gpt-5-mini"
+
+# add .env file
+Create .env file in the agent folder with your 
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
+
 
 # Run web interface
 uv run adk web
 ```
+
+### Functions you can use
+- search and summarize paper from arxiv
+- schedule time of day for daily search
+- send email summary to yourself
+   - send email to nsophonrat2@gmail.com to be added to the user pool
+
 ---
 
 ## Dependency Management  
