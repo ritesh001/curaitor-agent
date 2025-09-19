@@ -22,7 +22,6 @@ dependencies = [
     "langchain-ollama==0.3.8",
     "langchain-openai==0.3.33",
     "litellm>=1.77.1",
-    "logging>=0.4.9.6",
     "mcp>=1.14.0",
     "npx>=0.1.6",
     "numpy==2.3.3",
