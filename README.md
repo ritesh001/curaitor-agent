@@ -37,13 +37,15 @@ choose the model you want to use under llm:
   - provider: openai
   - model: "gpt-5-mini"
 
+#### Provide gmail address
+- send your gmail email address to nsophonrat2@gmail.com to be added to the user pool
+
 #### add .env file
 Create .env file in the agent folder with your 
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
-
-#### If you want to use email function 
-- send your gmail email address to nsophonrat2@gmail.com to be added to the user pool
+GMAIL_CREDENTIALS_PATH=
+GMAIL_TOKEN_PATH=secrets/token.json
 
 #### Run web interface
 ```bash
