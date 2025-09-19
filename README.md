@@ -10,6 +10,9 @@ It provides:
 - A **web interface** for running the agent.  
 - **Model Context Protocol (MCP) inspector** integration to test tools and server connections.  
 
+## Documentation
+https://curaitor-agent-docs.readthedocs.io/latest/
+
 ---
 
 ## Quick Start  
@@ -26,7 +29,7 @@ cd curaitor-agent
 ```
 #### Initialize project
 ```bash
-uv init
+uv sync
 ```
 
 #### Edit config file
@@ -112,7 +115,7 @@ The **MCP Inspector** helps verify your MCP server connection and test available
 
 ---
 
-## Notes  
+### Notes  
 - Ensure you’re using **Node.js v22.x** when running the inspector.  
 - Always keep your environment in sync with `requirements.txt` for reproducibility.  
 
