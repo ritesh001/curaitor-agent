@@ -15,32 +15,44 @@ It provides:
 ## Quick Start  
 
 ```bash
-# Install uv
+#### Install uv
+```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone repo
-git clone <your-repo-url>
+```
+#### Clone repo
+```bash
+git clone git@github.com:ritesh001/curaitor-agent.git
 cd curaitor-agent
-
-# Initialize project
+```
+#### Initialize project
+```bash
 uv init
+```
 
-# Edit config file
+#### Edit config file
 choose the model you want to use under llm:
   - provider: openai
   - model: "gpt-5-mini"
 
-# add .env file
+#### add .env file
 Create .env file in the agent folder with your 
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
 
+#### If you want to use email function 
+- send your gmail email address to nsophonrat2@gmail.com to be added to the user pool
 
-# Run web interface
+#### Run web interface
+```bash
 uv run adk web
 ```
 
 ### Functions you can use
+#### curaitor_agent
+- create database
+- query database
+
+#### curaitor_agent_v2
 - search and summarize paper from arxiv
 - schedule time of day for daily search
 - send email summary to yourself
@@ -48,7 +60,8 @@ uv run adk web
 
 ---
 
-## Dependency Management  
+## For Developer
+### Dependency Management  
 
 - Sync when `requirements.txt` is updated:  
   ```bash
@@ -63,7 +76,7 @@ uv run adk web
 
 ---
 
-## MCP Inspector Tool  
+### MCP Inspector Tool  
 
 The **MCP Inspector** helps verify your MCP server connection and test available tools.  
 
