@@ -56,4 +56,4 @@ data/agent_papers/
 data/tracker/*
 secrets/
 curaitor_agent/secrets/*
-note.txt
+note.txtcuraitor_agent/secrets/
