@@ -29,7 +29,7 @@ cd curaitor-agent
 ```
 #### Initialize project
 ```bash
-uv init
+uv sync
 ```
 
 #### Edit config file
