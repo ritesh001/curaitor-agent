@@ -115,7 +115,7 @@ The **MCP Inspector** helps verify your MCP server connection and test available
 
 ---
 
-## Notes  
+### Notes  
 - Ensure you’re using **Node.js v22.x** when running the inspector.  
 - Always keep your environment in sync with `requirements.txt` for reproducibility.  
 
