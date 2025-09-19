@@ -17,7 +17,7 @@ https://curaitor-agent-docs.readthedocs.io/latest/
 
 ## Quick Start  
 
-```bash
+
 #### Install uv
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -42,10 +42,18 @@ choose the model you want to use under llm:
 
 #### add .env file
 Create .env file in the agent folder with your 
+```bash
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
 GMAIL_CREDENTIALS_PATH=
 GMAIL_TOKEN_PATH=secrets/token.json
+```
+
+#### Run gmail authentication
+This will work for 1 hour.
+```bash
+uv run python curaitor_agent_v2/gmail_create_token.py
+```
 
 #### Run web interface
 ```bash
