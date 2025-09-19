@@ -10,28 +10,61 @@ It provides:
 - A **web interface** for running the agent.  
 - **Model Context Protocol (MCP) inspector** integration to test tools and server connections.  
 
+## Documentation
+https://curaitor-agent-docs.readthedocs.io/latest/
+
 ---
 
 ## Quick Start  
 
 ```bash
-# Install uv
+#### Install uv
+```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone repo
-git clone <your-repo-url>
+```
+#### Clone repo
+```bash
+git clone git@github.com:ritesh001/curaitor-agent.git
 cd curaitor-agent
+```
+#### Initialize project
+```bash
+uv sync
+```
 
-# Initialize project
-uv init
-uv add -r requirements.txt
+#### Edit config file
+choose the model you want to use under llm:
+  - provider: openai
+  - model: "gpt-5-mini"
 
-# Run web interface
+#### add .env file
+Create .env file in the agent folder with your 
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
+
+#### If you want to use email function 
+- send your gmail email address to nsophonrat2@gmail.com to be added to the user pool
+
+#### Run web interface
+```bash
 uv run adk web
 ```
+
+### Functions you can use
+#### curaitor_agent
+- create database
+- query database
+
+#### curaitor_agent_v2
+- search and summarize paper from arxiv
+- schedule time of day for daily search
+- send email summary to yourself
+   - send email to nsophonrat2@gmail.com to be added to the user pool
+
 ---
 
-## Dependency Management  
+## For Developer
+### Dependency Management  
 
 - Sync when `requirements.txt` is updated:  
   ```bash
@@ -46,7 +79,7 @@ uv run adk web
 
 ---
 
-## MCP Inspector Tool  
+### MCP Inspector Tool  
 
 The **MCP Inspector** helps verify your MCP server connection and test available tools.  
 
@@ -82,7 +115,7 @@ The **MCP Inspector** helps verify your MCP server connection and test available
 
 ---
 
-## Notes  
+### Notes  
 - Ensure you’re using **Node.js v22.x** when running the inspector.  
 - Always keep your environment in sync with `requirements.txt` for reproducibility.  
 
