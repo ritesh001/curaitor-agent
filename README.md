@@ -1,5 +1,4 @@
 # Curaitor Agent  
-[![Documentation Status]] (https://curaitor-agent-docs.readthedocs.io/latest/)
 **AI agent for scientific data extraction**  
 Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
