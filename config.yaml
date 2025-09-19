@@ -21,14 +21,13 @@ input:
   - max_keywords: 5
 
 source:
-  - pdf_path: ../data/pdfs
+  - pdf_path: papers
   - chunk_path: ../data/chunks
 
 llm:
   ## OpenAI
   - provider: openai
   # - model: "openai/gpt-4"
-  # - model: "gpt-4o-mini"
   - model: "gpt-5-mini"
 
   ## Gemini

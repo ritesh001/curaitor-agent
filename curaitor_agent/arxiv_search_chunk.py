@@ -11,8 +11,6 @@ import numpy as np
 import faiss
 from collections import defaultdict
 import time as time_module  # for retry sleeps; avoid clashing with datetime.time
-from dateutil import tz
-import tiktoken
 import os
 import yaml, json
 from pathlib import Path
@@ -283,11 +281,11 @@ def format_arxiv_query(keywords: list[str], field: str = "all", max_keywords: in
     return f"{field}:(" + " OR ".join(formatted_keywords) + ")"
 
 # --- Step 1: Define a Natural Language Query and Generate Keywords with LLM ---
-try:
-    # natural_language_query = config['input'][0]['query']
-    natural_language_query = 'search_query: ' + config['input'][0]['query'] ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
-except Exception as e:
-    raise SystemExit("[ERROR] Could not read 'query' from config.yaml. Exiting.")
+# try:
+#     # natural_language_query = config['input'][0]['query']
+#     natural_language_query = 'search_query: ' + config['input'][0]['query'] ## to work with nomic-ai/nomic-embed-text-v1.5 embedding model
+# except Exception as e:
+#     raise SystemExit("[ERROR] Could not read 'query' from config.yaml. Exiting.")
 
 # Use the LLM to get keywords
 # llm_model = config['llm'][1]['model']
@@ -317,12 +315,12 @@ def download_arxiv_pdfs(pdf_url: str = None, output_dir: str = config['source'][
     else:
         print("No PDF URL provided.")
 
-tz_london = tz.gettz("Europe/London")
-now_local = datetime.now(tz_london)
-days = config['input'][1]['max_days']
-start_date = (now_local.date() - timedelta(days=days-1))  # 含今天共100天
-start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
-end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
+# tz_london = tz.gettz("Europe/London")
+# now_local = datetime.now(tz_london)
+# days = config['input'][1]['max_days']
+# start_date = (now_local.date() - timedelta(days=days-1))
+# start_dt = datetime.combine(start_date, time(0, 0, tzinfo=tz_london))
+# end_dt   = datetime.combine(now_local.date(), time(23, 59, 59, tzinfo=tz_london))
 
 # USE_UPDATED = False
 
