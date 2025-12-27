@@ -31,7 +31,7 @@ try:
 except Exception:
     pass
 
-from content_parsing import extract_pdf_components, texts_to_plaintext
+from .content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
 # print(config['llm'][1]['model'])
