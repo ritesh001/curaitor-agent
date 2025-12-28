@@ -2,7 +2,7 @@ name: Curaitor LangGraph Hourly
 
 on:
   schedule:
-    - cron: "0 * * * *"  # hourly, on the hour (UTC)
+    - cron: "0 7 */3 * *"  # every 3rd day of the month at 7:00 (UTC)
   workflow_dispatch:
     inputs:
       query:
