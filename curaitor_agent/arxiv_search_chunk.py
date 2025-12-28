@@ -14,8 +14,23 @@ import time as time_module  # for retry sleeps; avoid clashing with datetime.tim
 import os
 import yaml, json
 from pathlib import Path
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv, find_dotenv
+
+# Load environment variables from a local .env if present (project root or parents)
+try:
+    # Try standard discovery first
+    found = find_dotenv()
+    if found:
+        load_dotenv(found, override=False)
+    else:
+        # Fallback: load .env from repo root relative to this file
+        repo_root = Path(__file__).resolve().parents[1]
+        env_path = repo_root / ".env"
+        if env_path.exists():
+            load_dotenv(env_path.as_posix(), override=False)
+except Exception:
+    pass
+
 from .content_parsing import extract_pdf_components, texts_to_plaintext
 
 config = yaml.safe_load(open("config.yaml", "r", encoding="utf-8"))
@@ -32,7 +47,15 @@ elif provider == "google":
 else:
     raise ValueError(f"Unsupported LLM provider: {provider}")
 if not api_key:
-    raise ValueError(f"Missing API key for provider '{provider}'. Set the appropriate env var.")
+    # Provide a clear hint about which variable to set
+    env_hint = {
+        "openrouter": "OPENROUTER_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "google": "GOOGLE_API_KEY",
+    }.get(provider, "API key")
+    raise ValueError(
+        f"Missing API key for provider '{provider}'. Set {env_hint} in your environment or .env file."
+    )
 
 def _normalize_model_for_provider(p: str, m: str | None) -> str | None:
     if not m:
@@ -138,12 +161,17 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
                 payload = {
                     "model": model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0,
                 }
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                # try with temperature=0 first, then retry without if unsupported
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                response = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if response.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, response.headers.get("Retry-After"))
                     continue
+                if response.status_code == 400 and "temperature" in response.text.lower():
+                    # Retry without temperature param
+                    response = requests.post(url, headers=headers, json=payload, timeout=60)
                 response.raise_for_status()
                 data = response.json()
                 llm_output = data["choices"][0]["message"]["content"]
@@ -157,12 +185,15 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
                 payload = {
                     "model": model or "gpt-4o-mini",
                     "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0,
                 }
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                response = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if response.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, response.headers.get("Retry-After"))
                     continue
+                if response.status_code == 400 and "temperature" in response.text.lower():
+                    response = requests.post(url, headers=headers, json=payload, timeout=60)
                 response.raise_for_status()
                 data = response.json()
                 llm_output = data["choices"][0]["message"]["content"]
@@ -177,12 +208,15 @@ def get_keywords_from_llm(natural_language_query: str, model: str = None) -> lis
                     "contents": [
                         {"role": "user", "parts": [{"text": prompt}]}
                     ],
-                    "generationConfig": {"temperature": 0},
                 }
-                response = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["generationConfig"] = {"temperature": 0}
+                response = requests.post(url, params=params, headers=headers, json=payload_with_temp, timeout=60)
                 if response.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, response.headers.get("Retry-After"))
                     continue
+                if response.status_code == 400 and "temperature" in response.text.lower():
+                    response = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
                 response.raise_for_status()
                 data = response.json()
                 # Join all text parts from the top candidate
@@ -532,11 +566,14 @@ def answer_query_with_context(question: str, context: str, model: str | None = N
                         {"role": "system", "content": sys_instructions},
                         {"role": "user", "content": user_msg},
                     ],
-                    "temperature": 0,
                 }
-                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                resp = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"].strip()
 
@@ -549,11 +586,14 @@ def answer_query_with_context(question: str, context: str, model: str | None = N
                         {"role": "system", "content": sys_instructions},
                         {"role": "user", "content": user_msg},
                     ],
-                    "temperature": 0,
                 }
-                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                resp = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"].strip()
 
@@ -566,11 +606,14 @@ def answer_query_with_context(question: str, context: str, model: str | None = N
                 prompt = f"{sys_instructions}\n\n{user_msg}"
                 payload = {
                     "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0},
                 }
-                resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["generationConfig"] = {"temperature": 0}
+                resp = requests.post(url, params=params, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 parts = resp.json()["candidates"][0]["content"]["parts"]
                 return " ".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
@@ -629,11 +672,14 @@ def summarize_docs(docs, model: str | None = None) -> str:
                         {"role": "system", "content": sys_instructions},
                         {"role": "user", "content": user_msg},
                     ],
-                    "temperature": 0,
                 }
-                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                resp = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"].strip()
 
@@ -646,11 +692,14 @@ def summarize_docs(docs, model: str | None = None) -> str:
                         {"role": "system", "content": sys_instructions},
                         {"role": "user", "content": user_msg},
                     ],
-                    "temperature": 0,
                 }
-                resp = requests.post(url, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["temperature"] = 0
+                resp = requests.post(url, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"].strip()
             elif provider == "google":
@@ -661,12 +710,15 @@ def summarize_docs(docs, model: str | None = None) -> str:
                 headers = {"Content-Type": "application/json"}
                 prompt = f"{sys_instructions}\n\n{user_msg}"
                 payload = {
-                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0},
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}]
                 }
-                resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
+                payload_with_temp = dict(payload)
+                payload_with_temp["generationConfig"] = {"temperature": 0}
+                resp = requests.post(url, params=params, headers=headers, json=payload_with_temp, timeout=60)
                 if resp.status_code == 429 and attempt < max_retries:
                     _sleep(attempt, resp.headers.get("Retry-After")); continue
+                if resp.status_code == 400 and "temperature" in resp.text.lower():
+                    resp = requests.post(url, params=params, headers=headers, json=payload, timeout=60)
                 resp.raise_for_status()
                 parts = resp.json()["candidates"][0]["content"]["parts"]
                 return " ".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()

@@ -9,9 +9,12 @@ ignore-paths=
     ^tools/spiders/.*,
     ^data/.*,
     ^tools/pipeline.py,
-    ^main.py
+    ^main.py,
+    ^curaitor_agent_v2/.*,
+    ^curaitor_agent/curaitor_mcp_server.py,
+    ^curaitor_agent/gmail_send.py
 
-ignored-modules=faiss
+ignored-modules=faiss,googleapiclient.discovery
 
 [REPORTS]
 ; fail-under=10

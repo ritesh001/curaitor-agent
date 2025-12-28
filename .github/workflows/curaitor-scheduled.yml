@@ -1,0 +1,89 @@
+name: Curaitor LangGraph Hourly
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # hourly, on the hour (UTC)
+  workflow_dispatch:
+    inputs:
+      query:
+        description: Research question for LangGraph
+        required: false
+        default: "plastic recycling"
+      max_days:
+        description: Days back to search
+        required: false
+        default: "1"
+
+concurrency:
+  group: curaitor-langgraph-hourly
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12"
+  HF_HOME: ${{ github.workspace }}/.cache/hf
+
+jobs:
+  langgraph:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv + HF
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            ${{ env.HF_HOME }}
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock', 'pyproject.toml', 'requirements.txt') }}
+
+      - name: Sync dependencies (locked)
+        run: uv sync --frozen
+
+      - name: Write .env for LLM
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        shell: bash
+        run: |
+          set -e
+          {
+            [[ -n "$OPENAI_API_KEY" ]] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
+            [[ -n "$OPENROUTER_API_KEY" ]] && echo "OPENROUTER_API_KEY=$OPENROUTER_API_KEY"
+          } > .env
+          echo "Wrote .env with available keys."
+
+      - name: Run LangGraph pipeline
+        env:
+          HF_HOME: ${{ env.HF_HOME }}
+        shell: bash
+        run: |
+          set -e
+          QUERY="${{ github.event.inputs.query || 'polymer electrolytes' }}"
+          DAYS="${{ github.event.inputs.max_days || '1' }}"
+          mkdir -p logs data
+          uv run python scripts/run_daily.py \
+            --query "$QUERY" \
+            --max-days "$DAYS" \
+            --db data/curaitor.sqlite \
+            --save-npz arxiv_out_hits.npz \
+          | tee logs/langgraph_run.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: langgraph-results-${{ github.run_id }}
+          path: |
+            data/curaitor.sqlite
+            arxiv_out_hits.npz
+            search_results.csv
+            logs/langgraph_run.txt
+            papers/
+          if-no-files-found: warn
+          retention-days: 7
+
