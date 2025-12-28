@@ -22,13 +22,13 @@ jobs:
     - name: Install Python
       run: uv python install 3.12
 
-    # 同步依赖（需要 pyproject.toml / uv.lock）
-    - name: Install packages
-      run: uv sync --python 3.12
+    # 同步依赖并安装测试额外依赖（pytest）
+    - name: Install packages (with test extras)
+      run: uv sync --python 3.12 --extra test
 
     - name: Run pylint
       run: uv run pylint $(git ls-files '*.py')
 
 
     - name:  Test all files
-      run: uv run pytest
+      run: uv run pytest -q
