@@ -57,3 +57,4 @@ data/tracker/*
 secrets/
 curaitor_agent/secrets/*
 note.txtcuraitor_agent/secrets/
+.DS_Store
