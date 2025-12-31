@@ -14,6 +14,10 @@ on:
         required: false
         default: "1"
 
+permissions:
+  id-token: write   # for AWS OIDC
+  contents: read    # for actions/checkout
+
 concurrency:
   group: curaitor-langgraph-hourly
   cancel-in-progress: false
@@ -74,6 +78,33 @@ jobs:
             --save-npz arxiv_out_hits.npz \
           | tee logs/langgraph_run.txt
 
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+
+      - name: Setup AWS CLI
+        uses: aws-actions/setup-aws-cli@v4
+
+      - name: Upload outputs to S3
+        env:
+          S3_BUCKET: curaitor-agent-dec2025
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_PREFIX="curaitor/${{ github.run_id }}"
+          echo "Uploading run outputs to s3://$S3_BUCKET/$RUN_PREFIX/"
+          aws s3 cp data/curaitor.sqlite s3://$S3_BUCKET/$RUN_PREFIX/
+          aws s3 cp arxiv_out_hits.npz    s3://$S3_BUCKET/$RUN_PREFIX/
+          aws s3 cp search_results.csv    s3://$S3_BUCKET/$RUN_PREFIX/
+          aws s3 cp logs/langgraph_run.txt s3://$S3_BUCKET/$RUN_PREFIX/
+          if [ -d papers ]; then
+            aws s3 sync papers/ s3://$S3_BUCKET/$RUN_PREFIX/papers/ --delete
+          else
+            echo "No papers/ directory to sync."
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -86,4 +117,3 @@ jobs:
             papers/
           if-no-files-found: warn
           retention-days: 7
-
