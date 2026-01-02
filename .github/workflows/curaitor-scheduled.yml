@@ -1,8 +1,8 @@
-name: Curaitor LangGraph Hourly
+name: Curaitor LangGraph Weekly
 
 on:
   schedule:
-    - cron: "0 * * * *"  # hourly, on the hour (UTC)
+    - cron: "0 7 */3 * *"  # every 3rd day of the month at 7:00 (UTC)
   workflow_dispatch:
     inputs:
       query:
@@ -19,7 +19,7 @@ permissions:
   contents: read    # for actions/checkout
 
 concurrency:
-  group: curaitor-langgraph-hourly
+  group: curaitor-langgraph-weekly
   cancel-in-progress: false
 
 env:

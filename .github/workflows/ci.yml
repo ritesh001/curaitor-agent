@@ -9,7 +9,6 @@ jobs:
     - name: Check out repo
       uses: actions/checkout@v5
 
-    # 安装 uv，并启用缓存
     - name: Set up uv
       uses: astral-sh/setup-uv@v6
       with:
@@ -18,11 +17,9 @@ jobs:
           pyproject.toml
           uv.lock
 
-    # 安装指定 Python（可改 3.12/3.11 等）
     - name: Install Python
       run: uv python install 3.12
 
-    # 同步依赖并安装测试额外依赖（pytest）
     - name: Install packages (with test extras)
       run: uv sync --python 3.12 --extra test
 

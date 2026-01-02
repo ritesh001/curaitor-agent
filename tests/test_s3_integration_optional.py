@@ -59,5 +59,5 @@ def test_optional_s3_upload_once():
         assert "hello.txt" in ls.stdout
 
         # Cleanup
-        subprocess.run(["aws", "s3", "rm", uri, "--region", region], check=True)
+        # subprocess.run(["aws", "s3", "rm", uri, "--region", region], check=True)
 
