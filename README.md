@@ -1,4 +1,9 @@
 # Curaitor Agent  
+[![CI](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml/badge.svg?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml)
+[![Scheduled](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml/badge.svg?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.12-blue?style=for-the-badge)](pyproject.toml)
+[![License](https://img.shields.io/github/license/ritesh001/curaitor-agent?style=for-the-badge)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/ritesh001/curaitor-agent?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/commits/main)
 **AI agent for scientific data extraction**  
 Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
