@@ -1,10 +1,15 @@
 # Curaitor Agent  
-[![CI](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml/badge.svg?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml)
-[![Scheduled](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml/badge.svg?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml)
-[![Python](https://img.shields.io/badge/python-%3E%3D3.12-blue?style=for-the-badge)](pyproject.toml)
-[![License](https://img.shields.io/github/license/ritesh001/curaitor-agent?style=for-the-badge)](LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/ritesh001/curaitor-agent?style=for-the-badge)](https://github.com/ritesh001/curaitor-agent/commits/main)
-**AI agent for scientific data extraction**  
+
+[![CI](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml/badge.svg?style=plastic)](https://github.com/ritesh001/curaitor-agent/actions/workflows/ci.yml)
+[![Scheduled](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml/badge.svg?style=plastic)](https://github.com/ritesh001/curaitor-agent/actions/workflows/curaitor-scheduled.yml)
+
+[![Stars](https://img.shields.io/github/stars/ritesh001/curaitor-agent?style=plastic)](https://github.com/ritesh001/curaitor-agent/stargazers)
+[![Issues](https://img.shields.io/github/issues/ritesh001/curaitor-agent?style=plastic)](https://github.com/ritesh001/curaitor-agent/issues)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.12-blue?style=plastic)](pyproject.toml)
+[![License](https://img.shields.io/github/license/ritesh001/curaitor-agent?style=plastic)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/ritesh001/curaitor-agent?style=plastic)](https://github.com/ritesh001/curaitor-agent/commits/main)
+
+## AI agent for scientific data extraction
 Part of Schmidt OxRSE Workshop (Sep 11–20, 2025)  
 
 ---
@@ -73,23 +78,13 @@ uv run python -m curaitor_agent.langraph_pipeline --query "your research questio
 
 ## Scheduling (LangGraph)
 
-Automate the pipeline via cron or macOS launchd.
+The pipeline runs on **GitHub Actions** using the scheduled workflow in
+`.github/workflows/curaitor-scheduled.yml`. You can:
+- Use the built-in schedule (cron) for automatic runs.
+- Trigger manually via **Actions → Curaitor LangGraph Weekly → Run workflow**.
 
-### Cron (daily 07:00)
-- Edit crontab:
-  - `crontab -e`
-- Add lines (update absolute paths):
-  - `SHELL=/bin/zsh`
-  - `PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin`
-  - `0 7 * * * cd /absolute/path/to/curaitor-agent && /opt/homebrew/bin/uv run python scripts/run_daily.py --query "plastic recycling" --max-days 7 --db data/curaitor.sqlite >> logs/langraph_daily.log 2>&1`
-
-### launchd (macOS)
-- Copy `scripts/launchd/curaitor.langraph.sample.plist` to `~/Library/LaunchAgents/com.curaitor.langgraph.daily.plist`
-- Edit the plist and replace all `/absolute/path/to/curaitor-agent` with your repo path
-- Ensure log directory exists: `mkdir -p /absolute/path/to/curaitor-agent/logs`
-- Load:
-  - `launchctl load ~/Library/LaunchAgents/com.curaitor.langgraph.daily.plist`
-  - `launchctl start com.curaitor.langgraph.daily`
+Outputs are uploaded to S3 under:
+`s3://curaitor-agent-dec2025/curaitor/<run_id>/`
 
 The CLI wrapper `scripts/run_daily.py` runs the pipeline and upserts results into `data/curaitor.sqlite` by default.
 
