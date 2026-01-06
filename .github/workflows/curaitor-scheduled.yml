@@ -84,9 +84,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-2
 
-      - name: Setup AWS CLI
-        uses: aws-actions/setup-aws-cli@v4
-
       - name: Upload outputs to S3
         env:
           S3_BUCKET: curaitor-agent-dec2025
