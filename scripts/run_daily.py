@@ -9,10 +9,11 @@ Example:
     --db data/curaitor.sqlite
 """
 
+import argparse
+import csv
 import os
 import sys
 from pathlib import Path
-import argparse
 
 # Ensure project root on sys.path
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,8 +24,42 @@ from curaitor_agent.langraph_pipeline import run_pipeline
 from curaitor_agent.db_utils import init_db, upsert_docs, upsert_hits, insert_answer
 
 
+def _write_search_results_csv(path: Path, results: list) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "arxiv_id",
+                "title",
+                "published",
+                "updated",
+                "entry_id",
+                "pdf_url",
+                "categories",
+                "authors",
+                "summary",
+            ],
+        )
+        writer.writeheader()
+        for r in results:
+            writer.writerow(
+                {
+                    "arxiv_id": r.entry_id.split("/")[-1] if getattr(r, "entry_id", None) else "",
+                    "title": getattr(r, "title", ""),
+                    "published": (r.published.isoformat() if getattr(r, "published", None) else ""),
+                    "updated": (r.updated.isoformat() if getattr(r, "updated", None) else ""),
+                    "entry_id": getattr(r, "entry_id", ""),
+                    "pdf_url": (r.pdf_url if getattr(r, "pdf_url", None) else ""),
+                    "categories": " ".join(getattr(r, "categories", []) or []),
+                    "authors": "; ".join([a.name for a in getattr(r, "authors", []) or []]),
+                    "summary": " ".join((getattr(r, "summary", "") or "").split()),
+                }
+            )
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Run daily LangGraph pipeline and update DB")
+    parser = argparse.ArgumentParser(description="Run LangGraph pipeline and update DB at regular intervals")
     parser.add_argument("--query", type=str, required=True, help="Natural language research query")
     parser.add_argument("--max-days", type=int, default=7, help="Search window in days")
     parser.add_argument("--db", type=str, default="data/curaitor.sqlite", help="SQLite DB path")
@@ -54,6 +89,9 @@ def main():
         save_npz=args.save_npz,
     )
 
+    results = state.get("results", []) or []
+    _write_search_results_csv(Path("search_results.csv"), results)
+
     docs = state.get("docs", []) or []
     hits = state.get("hits", []) or []
     final_answer = state.get("final_answer", "") or ""
@@ -72,4 +110,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

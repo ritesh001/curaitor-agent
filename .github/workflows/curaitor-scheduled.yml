@@ -94,7 +94,11 @@ jobs:
           echo "Uploading run outputs to s3://$S3_BUCKET/$RUN_PREFIX/"
           aws s3 cp data/curaitor.sqlite s3://$S3_BUCKET/$RUN_PREFIX/
           aws s3 cp arxiv_out_hits.npz    s3://$S3_BUCKET/$RUN_PREFIX/
-          aws s3 cp search_results.csv    s3://$S3_BUCKET/$RUN_PREFIX/
+          if [ -f search_results.csv ]; then
+            aws s3 cp search_results.csv    s3://$S3_BUCKET/$RUN_PREFIX/
+          else
+            echo "search_results.csv not found; skipping."
+          fi
           aws s3 cp logs/langgraph_run.txt s3://$S3_BUCKET/$RUN_PREFIX/
           if [ -d papers ]; then
             aws s3 sync papers/ s3://$S3_BUCKET/$RUN_PREFIX/papers/ --delete
